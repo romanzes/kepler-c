@@ -309,7 +309,6 @@ static void renderStars() {
 	glVertexPointer(2, GL_FLOAT, 0, stars);
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glDrawArrays(GL_POINTS, 0, starCount);
-	glFlush();
 }
 
 static void renderShip() {
@@ -318,7 +317,6 @@ static void renderShip() {
 		glVertexPointer(2, GL_FLOAT, 0, ship.points);
 		glEnableClientState(GL_VERTEX_ARRAY);
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-		glFlush();
 	}
 }
 
@@ -330,7 +328,6 @@ static void renderAsteroids() {
 		glVertexPointer(2, GL_FLOAT, 0, asteroids[i].points);
 		GLenum mode = asteroids[i].size == ASTEROID_SIZE_LARGE ? GL_TRIANGLE_FAN : GL_TRIANGLES;
 		glDrawArrays(mode, 0, asteroids[i].vertexCount);
-		glFlush();
 	}
 }
 
@@ -353,9 +350,7 @@ static void renderBullets() {
 		bulletPointCache[7] = bullets[i].position.y - cs * halfBulletLength + sn * halfBulletWidth;
 		glVertexPointer(2, GL_FLOAT, 0, bulletPointCache);
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-		glFlush();
 	}
-	glFlush();
 }
 
 void gameInit(float width, float height) {
