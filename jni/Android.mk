@@ -10,7 +10,7 @@ LOCAL_CFLAGS := -DANDROID_NDK \
 LOCAL_SRC_FILES := \
     app.c \
     app-android.c \
-    button.c \
+    textures.c \
     game.c \
     gameover.c \
     importgl.c \

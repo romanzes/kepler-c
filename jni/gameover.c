@@ -1,13 +1,15 @@
 #include "app.h"
-#include "button.h"
+#include "textures.h"
 #include "gameover.h"
 #include "importgl.h"
 #include "input.h"
 #include "util.h"
 
+extern const int REGION_REFRESH_BUTTON;
+
 static const int BLOOD_COLOR = 0x5dff0000;
 static float bloodPoints[8];
-static Button restartButton;
+static Sprite restartButton;
 
 static int scrW, scrH;
 
@@ -26,12 +28,13 @@ void gameOverInit(int width, int height) {
 
 	float btnWidth = scrW / 3;
 	float btnHeight = btnWidth;
-	initButton(&restartButton, loadTexture("refresh.png"), (scrW - btnWidth) / 2, btnHeight / 2, btnWidth, btnHeight);
+
+	createSprite(&restartButton, getTextureRegion(REGION_REFRESH_BUTTON), (scrW - btnWidth) / 2, btnHeight / 2, btnWidth, btnHeight);
 }
 
 void gameOverProcessInput() {
 	if (wasTouched()) {
-		if (buttonTouched(&restartButton, getTouchX(), getTouchY())) {
+		if (spriteTouched(&restartButton, getTouchX(), getTouchY())) {
 			restartGame();
 		}
 	}
@@ -54,7 +57,7 @@ void gameOverRender() {
 	glDisableClientState(GL_VERTEX_ARRAY);
 
 	glColor(0xffffffff);
-	drawButton(&restartButton);
+	drawSprite(&restartButton);
 
 	glDisable(GL_BLEND);
 }

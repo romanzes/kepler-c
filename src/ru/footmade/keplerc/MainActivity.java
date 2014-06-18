@@ -153,7 +153,7 @@ class TextureLoader {
 		amgr = context.getAssets();
 	}
 	
-	public int loadTexture(String fileName) {
+	public TextureInfo loadTexture(String fileName) {
         try {
             Bitmap bitmap = BitmapFactory.decodeStream(amgr.open(fileName));
             int textureIds[] = new int[1];
@@ -165,10 +165,19 @@ class TextureLoader {
             GLES10.glTexParameterf(GLES10.GL_TEXTURE_2D, GLES10.GL_TEXTURE_MAG_FILTER, GLES10.GL_LINEAR);                
             GLES10.glBindTexture(GLES10.GL_TEXTURE_2D, 0);
             bitmap.recycle();
-            return textureId;
+            TextureInfo result = new TextureInfo();
+            result.textureId = textureId;
+            result.width = bitmap.getWidth();
+            result.height = bitmap.getHeight();
+            return result;
         } catch(IOException e) {
             Log.d("Asteroids", "couldn't load asset '" + fileName + "'!");
             throw new RuntimeException("couldn't load asset '" + fileName + "'");
         }
     }
+}
+
+class TextureInfo {
+	int textureId;
+	int width, height;
 }

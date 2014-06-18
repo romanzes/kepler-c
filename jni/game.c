@@ -1,11 +1,12 @@
-#include <stdlib.h>
-#include <math.h>
 #include <float.h>
+#include <math.h>
+#include <stdlib.h>
 #include "importgl.h"
 #include "input.h"
+#include "polygon.h"
+#include "textures.h"
 #include "util.h"
 #include "vector2.h"
-#include "polygon.h"
 
 #undef PI
 #define PI 3.1415926535897932f
@@ -76,6 +77,17 @@ static const int STAR_COLOR = 0xffffffff;
 static const int SHIP_COLOR = 0xff0000ff;
 static const int ASTEROID_COLOR = 0xffff6a00;
 static const int BULLET_COLOR = 0xffff0000;
+
+extern const int REGION_SCORE_STRING;
+static Sprite scoreString;
+int score = 0;
+
+static void initGui() {
+	TextureRegion region = getTextureRegion(REGION_SCORE_STRING);
+	float scoreW = scrW / 4;
+	float scoreH = scoreW * region.height / region.width;
+	createSprite(&scoreString, getTextureRegion(REGION_SCORE_STRING), 0, scrH - scoreH, scoreW, scoreH);
+}
 
 static void createStars() {
 	int cellCountW = (int) (1 / STAR_INTERVAL) + 1;
@@ -244,6 +256,7 @@ static void updateBullets(float interval, float yDistance) {
 				asteroids[index] = asteroids[asteroidCount - 1];
 				asteroidCount--;
 				collided++;
+				score++;
 				break;
 			}
 		}
@@ -297,7 +310,7 @@ static void rotateSpace(float angle) {
 }
 
 static void prepareRender() {
-	//__android_log_print(ANDROID_LOG_INFO, "Asteroids", "scrW=%d scrH=%d", scrW, scrH);
+	//__android_log_print(ANDROID_LOG_INFO, "Asteroids", "scrW=%f scrH=%f", scrW, scrH);
 	glDisable(GL_DEPTH_TEST);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
@@ -353,9 +366,22 @@ static void renderBullets() {
 	}
 }
 
+static void renderGui() {
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glOrthof(0.0f, scrW, 0, scrH, -1.0f, 1.0f);
+	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	drawSprite(&scoreString);
+	drawNumber(score, scoreString.x + scoreString.width, scoreString.y, scoreString.height);
+	glDisable(GL_BLEND);
+}
+
 void gameInit(float width, float height) {
 	scrW = width;
 	scrH = height;
+	initGui();
 	scale = scrW;
 	screenRadius = vecLenF(scrW, scrH) / 2 + ASTEROID_RADIUS * scale;
 	activeSpaceRadius = screenRadius * 3 / 2;
@@ -370,6 +396,7 @@ void gameRestart() {
 	bulletCount = 0;
 	ship.state = SHIP_STATE_ACTIVE;
 	ship.speed = 0;
+	score = 0;
 }
 
 void gameProcessInput(float interval) {
@@ -410,6 +437,7 @@ void gameRender() {
 	renderAsteroids();
 	renderBullets();
 	renderShip();
+	renderGui();
 }
 
 void gameDeinit() {

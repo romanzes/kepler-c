@@ -2,6 +2,7 @@
 #include "game.h"
 #include "gameover.h"
 #include "importgl.h"
+#include "textures.h"
 #include "util.h"
 
 #define SCREEN_GAMEPLAY 1
@@ -10,6 +11,7 @@ static int currentScreen;
 
 // Called from the app framework.
 void appInit() {
+	loadTextures();
 	currentScreen = SCREEN_GAMEPLAY;
 }
 
@@ -52,6 +54,7 @@ void appRender(float interval, int width, int height) {
 // Called from the app framework.
 void appDeinit() {
 	gameDeinit();
+	freeTextures();
 }
 
 void restartGame() {

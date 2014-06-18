@@ -66,10 +66,18 @@ void Java_ru_footmade_keplerc_MainRenderer_nativeRender(JNIEnv* env) {
 	appRender(interval, sWindowWidth, sWindowHeight);
 }
 
-GLuint loadTexture(char *path) {
+TextureInfo loadTexture(char *path) {
 	jclass cls = (*g_env)->GetObjectClass(g_env, g_pngmgr);
-	jmethodID mid = (*g_env)->GetMethodID(g_env, cls, "loadTexture", "(Ljava/lang/String;)I");
+	jmethodID mid = (*g_env)->GetMethodID(g_env, cls, "loadTexture", "(Ljava/lang/String;)Lru/footmade/keplerc/TextureInfo;");
 	jstring name = (*g_env)->NewStringUTF(g_env, path);
-	jint textureId = (*g_env)->CallIntMethod(g_env, g_pngmgr, mid, name);
-	return textureId;
+	jobject textureInfo = (*g_env)->CallObjectMethod(g_env, g_pngmgr, mid, name);
+	jclass textureInfoClass = (*g_env)->GetObjectClass(g_env, textureInfo);
+	jfieldID textureId = (*g_env)->GetFieldID(g_env, textureInfoClass, "textureId", "I");
+	jfieldID width = (*g_env)->GetFieldID(g_env, textureInfoClass, "width", "I");
+	jfieldID height = (*g_env)->GetFieldID(g_env, textureInfoClass, "height", "I");
+	TextureInfo result;
+	result.textureId = (*g_env)->GetIntField(g_env, textureInfo, textureId);
+	result.width = (*g_env)->GetIntField(g_env, textureInfo, width);
+	result.height = (*g_env)->GetIntField(g_env, textureInfo, height);
+	return result;
 }
