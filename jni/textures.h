@@ -3,7 +3,9 @@
 
 const int REGION_REFRESH_BUTTON = 0;
 const int REGION_SCORE_STRING = 1;
-const int REGION_NUMBER_0 = 2;
+const int REGION_TIME_STRING = 2;
+const int REGION_COLON_STRING = 3;
+const int REGION_NUMBER_0 = 4;
 
 typedef struct {
 	int textureId;
@@ -25,7 +27,8 @@ void createSprite(Sprite *spr, TextureRegion region, float x, float y, float wid
 int spriteTouched(Sprite *spr, float x, float y);
 void drawTextureRegion(TextureRegion *region, float x, float y, float width, float height);
 void drawSprite(Sprite *spr);
-void drawNumber(int number, float x, float y, float height);
+int drawNumber(int number, float x, float y, float height);
+int drawTime(int seconds, float x, float y, float height);
 void freeTextures();
 
 #endif /* TEXTURES_H_ */

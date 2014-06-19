@@ -11,6 +11,8 @@ struct RegionInfo {
 struct RegionInfo regions[] = {
 		{ 0, 0, 0, 128, 128 }, // refresh button
 		{ 1, 0, 0, 330, 70 }, // SCORE:
+		{ 1, 0, 140, 250, 70 }, // TIME:
+		{ 1, 300, 0, 25, 70 }, // :
 		{ 1, 331, 0, 55, 70 }, // 0
 		{ 1, 0, 71, 55, 70 }, // 1
 		{ 1, 56, 71, 55, 70 }, // 2
@@ -20,7 +22,7 @@ struct RegionInfo regions[] = {
 		{ 1, 276, 71, 55, 70 }, // 6
 		{ 1, 331, 71, 55, 70 }, // 7
 		{ 1, 386, 71, 55, 70 }, // 8
-		{ 1, 426, 71, 55, 70 }, // 9
+		{ 1, 441, 71, 55, 70 }, // 9
 };
 
 static short indices[] = { 0, 1, 2,
@@ -29,6 +31,7 @@ static short indices[] = { 0, 1, 2,
 static std::vector<TextureInfo> textures;
 
 static TextureRegion digits[10];
+static TextureRegion colon;
 
 void loadTextures() {
 	textures.push_back(loadTexture("refresh.png"));
@@ -36,6 +39,7 @@ void loadTextures() {
 	for (int i = 0; i < 10; i++) {
 		digits[i] = getTextureRegion(REGION_NUMBER_0 + i);
 	}
+	colon = getTextureRegion(REGION_COLON_STRING);
 }
 
 static TextureInfo* getTexture(int id) {
@@ -123,7 +127,8 @@ void drawSprite(Sprite *spr) {
 	drawTexture(spr->region.textureId, spr->points, spr->region.texture);
 }
 
-void drawNumber(int number, float x, float y, float height) {
+// returns width of resulting string
+int drawNumber(int number, float x, float y, float height) {
 	int reverse = 0;
 	while (number > 0)
 	{
@@ -139,6 +144,25 @@ void drawNumber(int number, float x, float y, float height) {
 		offsetX += digitWidth;
 		reverse /= 10;
 	} while (reverse > 0);
+	return offsetX;
+}
+
+// returns width of resulting string
+int drawTime(int seconds, float x, float y, float height) {
+	int minutes = seconds / 60;
+	int minutes1 = minutes / 10;
+	int minutes2 = minutes % 10;
+	seconds %= 60;
+	int seconds1 = seconds / 10;
+	int seconds2 = seconds % 10;
+	int offsetX = drawNumber(minutes1, x, y, height);
+	offsetX += drawNumber(minutes2, x + offsetX, y, height);
+	int colonWidth = colon.width * height / colon.height;
+	drawTextureRegion(&colon, x + offsetX, y, colonWidth, height);
+	offsetX += colonWidth;
+	offsetX += drawNumber(seconds1, x + offsetX, y, height);
+	offsetX += drawNumber(seconds2, x + offsetX, y, height);
+	return offsetX;
 }
 
 void freeTextures() {

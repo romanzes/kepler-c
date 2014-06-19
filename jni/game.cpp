@@ -79,12 +79,19 @@ static const int BULLET_COLOR = 0xffff0000;
 extern const int REGION_SCORE_STRING;
 static Sprite scoreString;
 int score = 0;
+extern const int REGION_TIME_STRING;
+static Sprite timeString;
+float timePassed = 0;
 
 static void initGui() {
-	TextureRegion region = getTextureRegion(REGION_SCORE_STRING);
+	TextureRegion scoreRegion = getTextureRegion(REGION_SCORE_STRING);
+	TextureRegion timeRegion = getTextureRegion(REGION_TIME_STRING);
 	float scoreW = scrW / 4;
-	float scoreH = scoreW * region.height / region.width;
-	createSprite(&scoreString, getTextureRegion(REGION_SCORE_STRING), 0, scrH - scoreH, scoreW, scoreH);
+	float scoreH = scoreW * scoreRegion.height / scoreRegion.width;
+	float timeH = scoreH;
+	float timeW = timeH * timeRegion.width / timeRegion.height;
+	createSprite(&scoreString, scoreRegion, 0, scrH - scoreH, scoreW, scoreH);
+	createSprite(&timeString, timeRegion, scrW - drawTime(0, scrW, scrH, scoreH) - scoreW, scrH - scoreH, scoreW, scoreH);
 }
 
 static void createStars() {
@@ -350,7 +357,9 @@ static void renderGui() {
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	drawSprite(&scoreString);
+	drawSprite(&timeString);
 	drawNumber(score, scoreString.x + scoreString.width, scoreString.y, scoreString.height);
+	drawTime((int) timePassed, timeString.x + timeString.width, timeString.y, timeString.height);
 	glDisable(GL_BLEND);
 }
 
@@ -376,6 +385,7 @@ void gameRestart() {
 	ship.state = SHIP_STATE_ACTIVE;
 	ship.speed = 0;
 	score = 0;
+	timePassed = 0;
 }
 
 void gameProcessInput(float interval) {
@@ -393,6 +403,10 @@ void gameProcessInput(float interval) {
 		rotateSpace(angularVelocity * interval);
 }
 
+int gameIsRunning() {
+	return ship.state != SHIP_STATE_DESTROYED;
+}
+
 void gameUpdate(float interval) {
 	ship.speed += ship.acceleration * interval;
 	if (ship.speed > ship.topSpeed)
@@ -402,10 +416,8 @@ void gameUpdate(float interval) {
 	updateAsteroids(interval, yDistance);
 	updateBullets(interval, yDistance);
 	checkDeath();
-}
-
-int gameIsRunning() {
-	return ship.state != SHIP_STATE_DESTROYED;
+	if (gameIsRunning())
+		timePassed += interval;
 }
 
 void gameRender() {
