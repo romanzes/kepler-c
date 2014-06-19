@@ -33,12 +33,12 @@ typedef struct Ship
 	int state;
 	Vector2 *points;
 } Ship;
-static const float SHIP_WIDTH = 0.1f;
-static const float SHIP_HEIGHT = 0.15f;
-static const float SHIP_ACCELERATION = 0.2f;
-static const float SHIP_TOP_SPEED = 0.4f;
+static const float SHIP_WIDTH = 0.05f;
+static const float SHIP_HEIGHT = 0.075f;
+static const float SHIP_ACCELERATION = 0.1f;
+static const float SHIP_TOP_SPEED = 0.3f;
 static const float SHIP_MAX_ANGULAR_VELOCITY = PI;
-static const float SHIP_MIN_ANGULAR_VELOCITY = PI / 6;
+static const float SHIP_MIN_ANGULAR_VELOCITY = PI / 12;
 static Ship ship;
 
 static const int ASTEROID_SIZE_SMALL = 1;
@@ -52,8 +52,8 @@ typedef struct
 	Vector2 *points;
 } Asteroid;
 static const int ASTEROID_VERTEX_COUNT = 7;
-static const float ASTEROID_RADIUS = 0.15f;
-static const float ASTEROID_MAX_VELOCITY = 0.3f;
+static const float ASTEROID_RADIUS = 0.1f;
+static const float ASTEROID_MAX_VELOCITY = 0.2f;
 static const float ASTEROID_MAX_ANGULAR_VELOCITY = PI;
 static const float ASTEROID_EXPLOSION_VELOCITY = 0.1f;
 static int largeAsteroidCount;
@@ -65,7 +65,7 @@ typedef struct {
 	float angle;
 	Vector2 velocity;
 } Bullet;
-static const float BULLET_LENGTH = 0.1f;
+static const float BULLET_LENGTH = 0.05f;
 static const float BULLET_WIDTH = 0.01f;
 static const float BULLET_SPEED = 1.0f;
 static std::vector<Bullet> bullets;
