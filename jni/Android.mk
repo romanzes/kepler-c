@@ -8,16 +8,16 @@ LOCAL_CFLAGS := -DANDROID_NDK \
                 -DDISABLE_IMPORTGL
 
 LOCAL_SRC_FILES := \
-    app.c \
-    app-android.c \
-    textures.c \
-    game.c \
-    gameover.c \
-    importgl.c \
-    input.c \
-    polygon.c \
-    util.c \
-    vector2.c \
+    app.cpp \
+    app-android.cpp \
+    textures.cpp \
+    game.cpp \
+    gameover.cpp \
+    importgl.cpp \
+    input.cpp \
+    polygon.cpp \
+    util.cpp \
+    vector2.cpp \
 
 LOCAL_LDLIBS := -lGLESv1_CM -ldl -llog
 

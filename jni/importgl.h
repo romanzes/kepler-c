@@ -1,12 +1,6 @@
 #ifndef IMPORTGL_H_INCLUDED
 #define IMPORTGL_H_INCLUDED
 
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-
 #include <GLES/gl.h>
 #ifndef ANDROID_NDK
 #include <GLES/egl.h>
@@ -139,11 +133,6 @@ FNDEF(void, glViewport, (GLint x, GLint y, GLsizei width, GLsizei height));
 
 
 #endif // !DISABLE_IMPORTGL
-
-
-#ifdef __cplusplus
-}
-#endif
 
 
 #endif // !IMPORTGL_H_INCLUDED

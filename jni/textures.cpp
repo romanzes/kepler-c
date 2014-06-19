@@ -1,12 +1,7 @@
 #include "app.h"
 #include "importgl.h"
 #include "textures.h"
-
-#define TEXTURE_COUNT 2
-
-const int REGION_REFRESH_BUTTON = 0;
-const int REGION_SCORE_STRING = 1;
-const int REGION_NUMBER_0 = 2;
+#include "vector"
 
 struct RegionInfo {
 	int textureId;
@@ -31,15 +26,14 @@ struct RegionInfo regions[] = {
 static short indices[] = { 0, 1, 2,
 						   2, 3, 0 };
 
-static TextureInfo textures[TEXTURE_COUNT];
+static std::vector<TextureInfo> textures;
 
 static TextureRegion digits[10];
 
 void loadTextures() {
-	textures[0] = loadTexture("refresh.png");
-	textures[1] = loadTexture("strings.png");
-	int i;
-	for (i = 0; i < 10; i++) {
+	textures.push_back(loadTexture("refresh.png"));
+	textures.push_back(loadTexture("strings.png"));
+	for (int i = 0; i < 10; i++) {
 		digits[i] = getTextureRegion(REGION_NUMBER_0 + i);
 	}
 }
@@ -148,10 +142,8 @@ void drawNumber(int number, float x, float y, float height) {
 }
 
 void freeTextures() {
-	int i;
-	for (i = 0; i < TEXTURE_COUNT; i++) {
+	for (int i = 0; i < textures.size(); i++) {
 		glDeleteTextures(1, &textures[i].textureId);
 	}
+	std::vector<TextureInfo>().swap(textures);
 }
-
-#undef TEXTURE_COUNT

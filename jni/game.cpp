@@ -5,7 +5,9 @@
 #include "input.h"
 #include "polygon.h"
 #include "textures.h"
+#include "time.h"
 #include "util.h"
+#include "vector"
 #include "vector2.h"
 
 #undef PI
@@ -54,11 +56,9 @@ static const float ASTEROID_RADIUS = 0.15f;
 static const float ASTEROID_MAX_VELOCITY = 0.3f;
 static const float ASTEROID_MAX_ANGULAR_VELOCITY = PI;
 static const float ASTEROID_EXPLOSION_VELOCITY = 0.1f;
-static int asteroidCount;
 static int largeAsteroidCount;
 static const int ASTEROID_COUNT = 8;
-#define MAX_ASTEROID_COUNT 100
-static Asteroid asteroids[MAX_ASTEROID_COUNT];
+static std::vector<Asteroid> asteroids;
 
 typedef struct {
 	Vector2 position;
@@ -68,9 +68,7 @@ typedef struct {
 static const float BULLET_LENGTH = 0.1f;
 static const float BULLET_WIDTH = 0.01f;
 static const float BULLET_SPEED = 1.0f;
-static int bulletCount;
-#define MAX_BULLET_COUNT 100
-static Bullet bullets[MAX_BULLET_COUNT];
+static std::vector<Bullet> bullets;
 
 static const int SPACE_COLOR = 0xff000000;
 static const int STAR_COLOR = 0xffffffff;
@@ -96,10 +94,9 @@ static void createStars() {
 	float cellW = scrW / cellCountW;
 	float cellH = scrH / cellCountH;
 	stars = (Vector2 *) malloc(starCount * sizeof(Vector2));
-	int i, j;
-	for (i = 0; i < cellCountW; i++) {
+	for (int i = 0; i < cellCountW; i++) {
 		int relX = i * cellW - scrW / 2;
-		for (j = 0; j < cellCountH; j++) {
+		for (int j = 0; j < cellCountH; j++) {
 			int relY = j * cellH - scrH / 2;
 			int index = j * cellCountW + i;
 			stars[index].x = frand(0, cellW) + relX;
@@ -127,8 +124,7 @@ static void createShip() {
 }
 
 static void updateStars(float yDistance) {
-	int i;
-	for (i = 0; i < starCount; i++) {
+	for (int i = 0; i < starCount; i++) {
 		stars[i].y -= yDistance;
 		if (stars[i].y < -scrH / 2)
 			stars[i].y += scrH;
@@ -140,44 +136,40 @@ static void updateStars(float yDistance) {
 }
 
 static int createLargeAsteroid() {
-	if (asteroidCount == MAX_ASTEROID_COUNT)
-		return 0;
-	int tries;
-	for (tries = 0; tries < 10; tries++) {
+	for (int tries = 0; tries < 10; tries++) {
 		float radius = frand(screenRadius, activeSpaceRadius);
 		float angle = frand(-PI, PI);
 		float x = cos(angle) * radius;
 		float y = sin(angle) * radius;
 		int satisfy = 1;
-		int i;
-		for (i = 0; i < asteroidCount; i++) {
+		for (int i = 0; i < asteroids.size(); i++) {
 			if (vecDistanceF(x, y, asteroids[i].points[0].x, asteroids[i].points[0].y) < scale * ASTEROID_RADIUS * 2) {
 				satisfy = 0;
 				break;
 			}
 		}
 		if (satisfy) {
-			asteroids[asteroidCount].points = (Vector2 *) malloc((ASTEROID_VERTEX_COUNT + 2) * sizeof(Vector2));
-			asteroids[asteroidCount].points[0].x = x;
-			asteroids[asteroidCount].points[0].y = y;
+			Asteroid newAsteroid;
+			newAsteroid.points = (Vector2 *) malloc((ASTEROID_VERTEX_COUNT + 2) * sizeof(Vector2));
+			newAsteroid.points[0].x = x;
+			newAsteroid.points[0].y = y;
 			float angularStep = PI * 2 / ASTEROID_VERTEX_COUNT;
 			float radius = scale * ASTEROID_RADIUS;
-			int i;
-			for (i = 1; i <= ASTEROID_VERTEX_COUNT; i++) {
+			for (int i = 1; i <= ASTEROID_VERTEX_COUNT; i++) {
 				float vertexAngle = angularStep * i;
 				float vertexRadius = frand(radius / 2, radius);
-				asteroids[asteroidCount].points[i].x = x + cos(vertexAngle) * vertexRadius;
-				asteroids[asteroidCount].points[i].y = y + sin(vertexAngle) * vertexRadius;
+				newAsteroid.points[i].x = x + cos(vertexAngle) * vertexRadius;
+				newAsteroid.points[i].y = y + sin(vertexAngle) * vertexRadius;
 			}
-			asteroids[asteroidCount].points[ASTEROID_VERTEX_COUNT + 1] = asteroids[asteroidCount].points[1];
+			newAsteroid.points[ASTEROID_VERTEX_COUNT + 1] = newAsteroid.points[1];
 			float velocityAngle = atan2(x, y);
 			float velocityMagnitude = frand(0, scale * ASTEROID_MAX_VELOCITY);
-			asteroids[asteroidCount].velocity.x = cos(velocityMagnitude) * velocityMagnitude;
-			asteroids[asteroidCount].velocity.y = sin(velocityAngle) * velocityMagnitude;
-			asteroids[asteroidCount].angularVelocity = frand(-ASTEROID_MAX_ANGULAR_VELOCITY, ASTEROID_MAX_ANGULAR_VELOCITY);
-			asteroids[asteroidCount].size = ASTEROID_SIZE_LARGE;
-			asteroids[asteroidCount].vertexCount = ASTEROID_VERTEX_COUNT + 2;
-			asteroidCount++;
+			newAsteroid.velocity.x = cos(velocityMagnitude) * velocityMagnitude;
+			newAsteroid.velocity.y = sin(velocityAngle) * velocityMagnitude;
+			newAsteroid.angularVelocity = frand(-ASTEROID_MAX_ANGULAR_VELOCITY, ASTEROID_MAX_ANGULAR_VELOCITY);
+			newAsteroid.size = ASTEROID_SIZE_LARGE;
+			newAsteroid.vertexCount = ASTEROID_VERTEX_COUNT + 2;
+			asteroids.push_back(newAsteroid);
 			largeAsteroidCount++;
 			return 1;
 		}
@@ -186,15 +178,18 @@ static int createLargeAsteroid() {
 }
 
 static void updateAsteroids(float interval, float yDistance) {
-	int i;
-	for (i = 0; i < asteroidCount; i++) {
+	for (int i = 0; i < asteroids.size(); i++) {
+		for (int j = 0; j < asteroids[i].vertexCount; j++) {
+			asteroids[i].points[j].y -= yDistance;
+			vecMulAddV(&asteroids[i].points[j], &asteroids[i].velocity, interval);
+			vecRotateAround(&asteroids[i].points[j], &asteroids[i].points[0], asteroids[i].angularVelocity * interval);
+		}
 		if (vecLenV(&asteroids[i].points[0]) > activeSpaceRadius) {
 			free(asteroids[i].points);
 			if (asteroids[i].size == ASTEROID_SIZE_LARGE) {
 				largeAsteroidCount--;
 			}
-			asteroids[i] = asteroids[asteroidCount - 1];
-			asteroidCount--;
+			asteroids.erase(asteroids.begin() + i);
 			i--;
 		}
 	}
@@ -202,82 +197,63 @@ static void updateAsteroids(float interval, float yDistance) {
 		if (!createLargeAsteroid())
 			break;
 	}
-	for (i = 0; i < asteroidCount; i++) {
-		int j;
-		for (j = 0; j < asteroids[i].vertexCount; j++) {
-			asteroids[i].points[j].y -= yDistance;
-		}
-		for (j = 0; j < asteroids[i].vertexCount; j++) {
-			vecMulAddV(&asteroids[i].points[j], &asteroids[i].velocity, interval);
-			vecRotateAround(&asteroids[i].points[j], &asteroids[i].points[0], asteroids[i].angularVelocity * interval);
-		}
-	}
 }
 
 static void splitAsteroid(int index) {
-	int i, j;
-	for (i = ASTEROID_VERTEX_COUNT, j = 1; j <= ASTEROID_VERTEX_COUNT && asteroidCount < MAX_ASTEROID_COUNT; i = j++, asteroidCount++) {
-		asteroids[asteroidCount].size = ASTEROID_SIZE_SMALL;
-		asteroids[asteroidCount].vertexCount = 3;
-		asteroids[asteroidCount].points = (Vector2 *) malloc(3 * sizeof(Vector2));
-		asteroids[asteroidCount].points[0].x = asteroids[index].points[0].x;
-		asteroids[asteroidCount].points[0].y = asteroids[index].points[0].y;
-		asteroids[asteroidCount].points[1].x = asteroids[index].points[i].x;
-		asteroids[asteroidCount].points[1].y = asteroids[index].points[i].y;
-		asteroids[asteroidCount].points[2].x = asteroids[index].points[j].x;
-		asteroids[asteroidCount].points[2].y = asteroids[index].points[j].y;
-		asteroids[asteroidCount].angularVelocity = 0;
-		float velocityAngle = atan2f(asteroids[asteroidCount].points[1].x - asteroids[asteroidCount].points[0].x,
-				asteroids[asteroidCount].points[1].y - asteroids[asteroidCount].points[0].y);
-		asteroids[asteroidCount].velocity.x = asteroids[index].velocity.x + sin(velocityAngle) * scale * ASTEROID_EXPLOSION_VELOCITY;
-		asteroids[asteroidCount].velocity.y = asteroids[index].velocity.y + cos(velocityAngle) * scale * ASTEROID_EXPLOSION_VELOCITY;
+	for (int i = ASTEROID_VERTEX_COUNT, j = 1; j <= ASTEROID_VERTEX_COUNT; i = j++) {
+		Asteroid newAsteroid;
+		newAsteroid.size = ASTEROID_SIZE_SMALL;
+		newAsteroid.vertexCount = 3;
+		newAsteroid.points = (Vector2 *) malloc(3 * sizeof(Vector2));
+		newAsteroid.points[0].x = asteroids[index].points[0].x;
+		newAsteroid.points[0].y = asteroids[index].points[0].y;
+		newAsteroid.points[1].x = asteroids[index].points[i].x;
+		newAsteroid.points[1].y = asteroids[index].points[i].y;
+		newAsteroid.points[2].x = asteroids[index].points[j].x;
+		newAsteroid.points[2].y = asteroids[index].points[j].y;
+		newAsteroid.angularVelocity = 0;
+		float velocityAngle = atan2f(newAsteroid.points[1].x - newAsteroid.points[0].x,
+				newAsteroid.points[1].y - newAsteroid.points[0].y);
+		newAsteroid.velocity.x = asteroids[index].velocity.x + sin(velocityAngle) * scale * ASTEROID_EXPLOSION_VELOCITY;
+		newAsteroid.velocity.y = asteroids[index].velocity.y + cos(velocityAngle) * scale * ASTEROID_EXPLOSION_VELOCITY;
+		asteroids.push_back(newAsteroid);
 	}
 }
 
 static void updateBullets(float interval, float yDistance) {
-	int i;
-	for (i = 0; i < bulletCount; i++) {
+	for (int i = 0; i < bullets.size(); i++) {
 		vecMulAddV(&bullets[i].position, &bullets[i].velocity, interval);
-		int collided = 0;
-		int j;
-		for (j = 0; j < asteroidCount; j++) {
-			int offset = 0, count = asteroids[j].vertexCount;
-			if (asteroids[j].size == ASTEROID_SIZE_LARGE) {
-				offset = 1;
-				count = ASTEROID_VERTEX_COUNT;
-			}
-			if (polyContainsV(asteroids[j].points, offset, count, &bullets[i].position)) {
-				int index = j;
-				if (asteroids[j].size == ASTEROID_SIZE_LARGE) {
-					largeAsteroidCount--;
-					splitAsteroid(j);
-				}
-				free(asteroids[index].points);
-				asteroids[index] = asteroids[asteroidCount - 1];
-				asteroidCount--;
-				collided++;
-				score++;
-				break;
-			}
-		}
-		if (collided) {
-			bullets[i] = bullets[bulletCount - 1];
-			bulletCount--;
+		bullets[i].position.y -= yDistance;
+		if (vecLenV(&bullets[i].position) > activeSpaceRadius) {
+			bullets.erase(bullets.begin() + i);
 			i--;
 		} else {
-			bullets[i].position.y -= yDistance;
-			if (vecLenV(&bullets[i].position) > activeSpaceRadius) {
-				bullets[i] = bullets[bulletCount - 1];
-				bulletCount--;
-				i--;
+			for (int j = 0; j < asteroids.size(); j++) {
+				int offset = 0, count = asteroids[j].vertexCount;
+				if (asteroids[j].size == ASTEROID_SIZE_LARGE) {
+					offset = 1;
+					count = ASTEROID_VERTEX_COUNT;
+				}
+				if (polyContainsV(asteroids[j].points, offset, count, &bullets[i].position)) {
+					int index = j;
+					if (asteroids[j].size == ASTEROID_SIZE_LARGE) {
+						largeAsteroidCount--;
+						splitAsteroid(j);
+					}
+					free(asteroids[index].points);
+					asteroids.erase(asteroids.begin() + index);
+					bullets.erase(bullets.begin() + i);
+					i--;
+					score++;
+					break;
+				}
 			}
 		}
 	}
 }
 
 static void checkDeath() {
-	int i;
-	for (i = 0; i < asteroidCount; i++) {
+	for (int i = 0; i < asteroids.size(); i++) {
 		int offset = 0, count = asteroids[i].vertexCount;
 		if (asteroids[i].size == ASTEROID_SIZE_LARGE) {
 			offset = 1;
@@ -295,14 +271,14 @@ static void rotateSpace(float angle) {
 	for (i = 0; i < starCount; i++) {
 		vecRotate(&stars[i], angle);
 	}
-	for (i = 0; i < asteroidCount; i++) {
+	for (i = 0; i < asteroids.size(); i++) {
 		int j;
 		for (j = 0; j < asteroids[i].vertexCount; j++) {
 			vecRotate(&asteroids[i].points[j], angle);
 		}
 		vecRotate(&asteroids[i].velocity, angle);
 	}
-	for (i = 0; i < bulletCount; i++) {
+	for (i = 0; i < bullets.size(); i++) {
 		vecRotate(&bullets[i].position, angle);
 		vecRotate(&bullets[i].velocity, angle);
 		bullets[i].angle -= angle;
@@ -337,7 +313,7 @@ static void renderAsteroids() {
 	glColor(ASTEROID_COLOR);
 	glEnableClientState(GL_VERTEX_ARRAY);
 	int i;
-	for (i = 0; i < asteroidCount; i++) {
+	for (i = 0; i < asteroids.size(); i++) {
 		glVertexPointer(2, GL_FLOAT, 0, asteroids[i].points);
 		GLenum mode = asteroids[i].size == ASTEROID_SIZE_LARGE ? GL_TRIANGLE_FAN : GL_TRIANGLES;
 		glDrawArrays(mode, 0, asteroids[i].vertexCount);
@@ -350,7 +326,7 @@ static void renderBullets() {
 	float halfBulletLength = scale * BULLET_LENGTH / 2;
 	float halfBulletWidth = scale * BULLET_WIDTH / 2;
 	int i;
-	for (i = 0; i < bulletCount; i++) {
+	for (i = 0; i < bullets.size(); i++) {
 		float sn = sin(bullets[i].angle);
 		float cs = cos(bullets[i].angle);
 		bulletPointCache[0] = bullets[i].position.x + cs * halfBulletWidth + sn * halfBulletLength;
@@ -391,9 +367,12 @@ void gameInit(float width, float height) {
 }
 
 void gameRestart() {
-	asteroidCount = 0;
+	for (int i = 0; i < asteroids.size(); i++) {
+		free(asteroids[i].points);
+	}
+	std::vector<Asteroid>().swap(asteroids);
+	std::vector<Bullet>().swap(bullets);
 	largeAsteroidCount = 0;
-	bulletCount = 0;
 	ship.state = SHIP_STATE_ACTIVE;
 	ship.speed = 0;
 	score = 0;
@@ -401,14 +380,13 @@ void gameRestart() {
 
 void gameProcessInput(float interval) {
 	if (wasTouched()) {
-		if (bulletCount < MAX_BULLET_COUNT) {
-			bullets[bulletCount].position.x = 0;
-			bullets[bulletCount].position.y = 0;
-			bullets[bulletCount].angle = 0;
-			bullets[bulletCount].velocity.x = 0;
-			bullets[bulletCount].velocity.y = scale * BULLET_SPEED;
-			bulletCount++;
-		}
+		Bullet newBullet;
+		newBullet.position.x = 0;
+		newBullet.position.y = 0;
+		newBullet.angle = 0;
+		newBullet.velocity.x = 0;
+		newBullet.velocity.y = scale * BULLET_SPEED;
+		bullets.push_back(newBullet);
 	}
 	float angularVelocity = -SHIP_MAX_ANGULAR_VELOCITY * getAccelerometerX() / 10;
 	if (fabs(angularVelocity) >= SHIP_MIN_ANGULAR_VELOCITY)
@@ -444,7 +422,9 @@ void gameDeinit() {
 	free(stars);
 	free(ship.points);
 	int i;
-	for (i = 0; i < asteroidCount; i++) {
+	for (i = 0; i < asteroids.size(); i++) {
 		free(asteroids[i].points);
 	}
+	std::vector<Asteroid>().swap(asteroids);
+	std::vector<Bullet>().swap(bullets);
 }

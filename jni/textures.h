@@ -1,6 +1,10 @@
 #ifndef TEXTURES_H_
 #define TEXTURES_H_
 
+const int REGION_REFRESH_BUTTON = 0;
+const int REGION_SCORE_STRING = 1;
+const int REGION_NUMBER_0 = 2;
+
 typedef struct {
 	int textureId;
 	float u1, v1, u2, v2;

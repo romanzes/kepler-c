@@ -5,8 +5,6 @@
 #include "input.h"
 #include "util.h"
 
-extern const int REGION_REFRESH_BUTTON;
-
 static const int BLOOD_COLOR = 0x5dff0000;
 static float bloodPoints[8];
 static Sprite restartButton;

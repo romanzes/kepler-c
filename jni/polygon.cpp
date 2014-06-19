@@ -5,8 +5,7 @@
 int polyContainsV(Vector2 *polygon, int offset, int count, Vector2 *vec) {
 	int intersects = 0;
 	int limit = offset + count;
-	int i, j;
-	for (i = limit - 1, j = offset; j < limit; i = j++) {
+	for (int i = limit - 1, j = offset; j < limit; i = j++) {
 		float x1 = polygon[i].x;
 		float y1 = polygon[i].y;
 		float x2 = polygon[j].x;
@@ -26,8 +25,7 @@ int polygonsIntersect(Vector2 *polygon1, int offset1, int count1, Vector2 *polyg
 	int end2 = offset2 + count2;
 
 	// Get polygon1 axes
-	int i;
-	for (i = offset1; i < end1; i++) {
+	for (int i = offset1; i < end1; i++) {
 		float x1 = polygon1[i].x;
 		float y1 = polygon1[i].y;
 		float x2 = polygon1[(i + 1) % count1].x;
@@ -45,8 +43,7 @@ int polygonsIntersect(Vector2 *polygon1, int offset1, int count1, Vector2 *polyg
 		// Project polygon1 onto this axis
 		float min1 = axisX * polygon1[0].x + axisY * polygon1[0].x;
 		float max1 = min1;
-		int j;
-		for (j = offset1; j < end1; j++) {
+		for (int j = offset1; j < end1; j++) {
 			float p = axisX * polygon1[j].x + axisY * polygon1[j].y;
 			if (p < min1) {
 				min1 = p;
@@ -58,7 +55,7 @@ int polygonsIntersect(Vector2 *polygon1, int offset1, int count1, Vector2 *polyg
 		// Project polygon2 onto this axis
 		float min2 = axisX * polygon2[0].x + axisY * polygon2[0].y;
 		float max2 = min2;
-		for (j = offset2; j < end2; j++) {
+		for (int j = offset2; j < end2; j++) {
 			float p = axisX * polygon2[j].x + axisY * polygon2[j].y;
 			if (p < min2) {
 				min2 = p;
@@ -92,7 +89,7 @@ int polygonsIntersect(Vector2 *polygon1, int offset1, int count1, Vector2 *polyg
 	}
 
 	// Get polygon2 axes
-	for (i = offset2; i < end2; i++) {
+	for (int i = offset2; i < end2; i++) {
 		float x1 = polygon2[i].x;
 		float y1 = polygon2[i].y;
 		float x2 = polygon2[(i + 1) % count2].x;
@@ -110,8 +107,7 @@ int polygonsIntersect(Vector2 *polygon1, int offset1, int count1, Vector2 *polyg
 		// Project polygon1 onto this axis
 		float min1 = axisX * polygon1[0].x + axisY * polygon1[0].y;
 		float max1 = min1;
-		int j;
-		for (j = offset1; j < end1; j++) {
+		for (int j = offset1; j < end1; j++) {
 			float p = axisX * polygon1[j].x + axisY * polygon1[j].y;
 			if (p < min1) {
 				min1 = p;
@@ -123,7 +119,7 @@ int polygonsIntersect(Vector2 *polygon1, int offset1, int count1, Vector2 *polyg
 		// Project polygon2 onto this axis
 		float min2 = axisX * polygon2[0].x + axisY * polygon2[0].y;
 		float max2 = min2;
-		for (j = offset2; j < end2; j++) {
+		for (int j = offset2; j < end2; j++) {
 			float p = axisX * polygon2[j].x + axisY * polygon2[j].y;
 			if (p < min2) {
 				min2 = p;
