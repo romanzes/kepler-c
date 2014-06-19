@@ -82,15 +82,16 @@ static const int BULLET_COLOR = 0xffff0000;
 
 extern const int REGION_SCORE_STRING;
 static Sprite scoreString;
-static int score = 0;
+static int score;
 extern const int REGION_TIME_STRING;
 static Sprite timeString;
-static float timePassed = 0;
+static float timeRemaining;
+static const int INITIAL_TIME = 60;
 extern const int REGION_COMBO_STRING;
 static Sprite comboString;
-static int combo = 0;
-static float comboTime = 0;
-static const float COMBO_TIMEOUT = 3.0f;
+static int combo;
+static float comboTime;
+static const float COMBO_TIMEOUT = 2.5f;
 
 static void initGui() {
 	TextureRegion scoreRegion = getTextureRegion(REGION_SCORE_STRING);
@@ -254,6 +255,16 @@ static void splitAsteroid(int index) {
 	}
 }
 
+static void increaseScore() {
+	comboTime = 0;
+	combo++;
+	score += combo;
+	int bonusTime = 0;
+	if (combo % 5 == 0)
+		bonusTime = combo;
+	timeRemaining += bonusTime;
+}
+
 static void updateBullets(float interval, float yDistance) {
 	for (int i = 0; i < bullets.size(); i++) {
 		vecMulAddV(&bullets[i].position, &bullets[i].velocity, interval);
@@ -278,10 +289,7 @@ static void updateBullets(float interval, float yDistance) {
 					asteroids.erase(asteroids.begin() + index);
 					bullets.erase(bullets.begin() + i);
 					i--;
-					score++;
-					comboTime = 0;
-					if (comboTime < COMBO_TIMEOUT)
-						combo++;
+					increaseScore();
 					break;
 				}
 			}
@@ -290,17 +298,25 @@ static void updateBullets(float interval, float yDistance) {
 }
 
 static void checkDeath() {
-	for (int i = 0; i < asteroids.size(); i++) {
-		int offset = 0, count = asteroids[i].vertexCount;
-		if (asteroids[i].size == ASTEROID_SIZE_LARGE) {
-			offset = 1;
-			count = ASTEROID_VERTEX_COUNT;
+	int dead = 0;
+	if (timeRemaining < 0) {
+		dead = 1;
+	} else {
+		for (int i = 0; i < asteroids.size(); i++) {
+			int offset = 0, count = asteroids[i].vertexCount;
+			if (asteroids[i].size == ASTEROID_SIZE_LARGE) {
+				offset = 1;
+				count = ASTEROID_VERTEX_COUNT;
+			}
+			if (polygonsIntersect(asteroids[i].points, offset, count, ship.points, 0, 4)) {
+				dead = 1;
+				break;
+			}
 		}
-		if (polygonsIntersect(asteroids[i].points, offset, count, ship.points, 0, 4)) {
-			ship.state = SHIP_STATE_DESTROYING;
-			destroyTime = 0.0f;
-			break;
-		}
+	}
+	if (dead) {
+		ship.state = SHIP_STATE_DESTROYING;
+		destroyTime = 0.0f;
 	}
 }
 
@@ -401,24 +417,12 @@ static void renderGui() {
 	drawSprite(&scoreString);
 	drawNumber(score, scoreString.x + scoreString.width, scoreString.y, scoreString.height);
 	drawSprite(&timeString);
-	drawTime((int) timePassed, timeString.x + timeString.width, timeString.y, timeString.height);
+	drawTime((int) timeRemaining, timeString.x + timeString.width, timeString.y, timeString.height);
 	if (combo > 1) {
 		drawSprite(&comboString);
 		drawNumber(combo, comboString.x + comboString.width, comboString.y, comboString.height);
 	}
 	glDisable(GL_BLEND);
-}
-
-void gameInit(float width, float height) {
-	scrW = width;
-	scrH = height;
-	initGui();
-	scale = scrW;
-	screenRadius = vecLenF(scrW, scrH) / 2 + ASTEROID_RADIUS * scale;
-	activeSpaceRadius = screenRadius * 3 / 2;
-	srand(time(0));
-	createStars();
-	createShip();
 }
 
 void gameRestart() {
@@ -430,8 +434,21 @@ void gameRestart() {
 	largeAsteroidCount = 0;
 	createShip();
 	score = 0;
-	timePassed = 0;
+	timeRemaining = INITIAL_TIME;
 	combo = 0;
+	comboTime = COMBO_TIMEOUT;
+}
+
+void gameInit(float width, float height) {
+	scrW = width;
+	scrH = height;
+	initGui();
+	scale = scrW;
+	screenRadius = vecLenF(scrW, scrH) / 2 + ASTEROID_RADIUS * scale;
+	activeSpaceRadius = screenRadius * 3 / 2;
+	srand(time(0));
+	createStars();
+	gameRestart();
 }
 
 void gameProcessInput(float interval) {
@@ -467,8 +484,11 @@ void gameUpdate(float interval) {
 	comboTime += interval;
 	if (comboTime > COMBO_TIMEOUT)
 		combo = 0;
-	if (gameIsRunning())
-		timePassed += interval;
+	if (gameIsRunning()) {
+		timeRemaining -= interval;
+		if (timeRemaining < 0)
+			timeRemaining = 0;
+	}
 }
 
 void gameRender() {
