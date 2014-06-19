@@ -159,7 +159,7 @@ static void updateStars(float yDistance) {
 static int createLargeAsteroid() {
 	for (int tries = 0; tries < 10; tries++) {
 		float radius = frand(screenRadius, activeSpaceRadius);
-		float angle = frand(-PI, PI);
+		float angle = frand(0, PI);
 		float x = cos(angle) * radius;
 		float y = sin(angle) * radius;
 		int satisfy = 1;
