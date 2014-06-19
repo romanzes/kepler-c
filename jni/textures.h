@@ -4,8 +4,9 @@
 const int REGION_REFRESH_BUTTON = 0;
 const int REGION_SCORE_STRING = 1;
 const int REGION_TIME_STRING = 2;
-const int REGION_COLON_STRING = 3;
-const int REGION_NUMBER_0 = 4;
+const int REGION_COMBO_STRING = 3;
+const int REGION_COLON_STRING = 4;
+const int REGION_NUMBER_0 = 5;
 
 typedef struct {
 	int textureId;

@@ -78,20 +78,29 @@ static const int BULLET_COLOR = 0xffff0000;
 
 extern const int REGION_SCORE_STRING;
 static Sprite scoreString;
-int score = 0;
+static int score = 0;
 extern const int REGION_TIME_STRING;
 static Sprite timeString;
-float timePassed = 0;
+static float timePassed = 0;
+extern const int REGION_COMBO_STRING;
+static Sprite comboString;
+static int combo = 0;
+static float comboTime = 0;
+static const float COMBO_TIMEOUT = 3.0f;
 
 static void initGui() {
 	TextureRegion scoreRegion = getTextureRegion(REGION_SCORE_STRING);
 	TextureRegion timeRegion = getTextureRegion(REGION_TIME_STRING);
+	TextureRegion comboRegion = getTextureRegion(REGION_COMBO_STRING);
 	float scoreW = scrW / 4;
 	float scoreH = scoreW * scoreRegion.height / scoreRegion.width;
 	float timeH = scoreH;
 	float timeW = timeH * timeRegion.width / timeRegion.height;
+	float comboH = scoreH;
+	float comboW = comboH * comboRegion.width / comboRegion.height;
 	createSprite(&scoreString, scoreRegion, 0, scrH - scoreH, scoreW, scoreH);
-	createSprite(&timeString, timeRegion, scrW - drawTime(0, scrW, scrH, scoreH) - scoreW, scrH - scoreH, scoreW, scoreH);
+	createSprite(&timeString, timeRegion, scrW - drawTime(0, scrW, scrH, timeH) - timeW, scrH - scoreH, timeW, timeH);
+	createSprite(&comboString, comboRegion, 0, scrH - scoreH - comboH * 2, comboW, comboH);
 }
 
 static void createStars() {
@@ -252,6 +261,9 @@ static void updateBullets(float interval, float yDistance) {
 					bullets.erase(bullets.begin() + i);
 					i--;
 					score++;
+					comboTime = 0;
+					if (comboTime < COMBO_TIMEOUT)
+						combo++;
 					break;
 				}
 			}
@@ -357,9 +369,13 @@ static void renderGui() {
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	drawSprite(&scoreString);
-	drawSprite(&timeString);
 	drawNumber(score, scoreString.x + scoreString.width, scoreString.y, scoreString.height);
+	drawSprite(&timeString);
 	drawTime((int) timePassed, timeString.x + timeString.width, timeString.y, timeString.height);
+	if (combo > 1) {
+		drawSprite(&comboString);
+		drawNumber(combo, comboString.x + comboString.width, comboString.y, comboString.height);
+	}
 	glDisable(GL_BLEND);
 }
 
@@ -386,6 +402,7 @@ void gameRestart() {
 	ship.speed = 0;
 	score = 0;
 	timePassed = 0;
+	combo = 0;
 }
 
 void gameProcessInput(float interval) {
@@ -416,6 +433,10 @@ void gameUpdate(float interval) {
 	updateAsteroids(interval, yDistance);
 	updateBullets(interval, yDistance);
 	checkDeath();
+	comboTime += interval;
+	if (comboTime > COMBO_TIMEOUT) {
+		combo = 0;
+	}
 	if (gameIsRunning())
 		timePassed += interval;
 }
