@@ -1,7 +1,9 @@
 #include "app.h"
+#include "math.h"
 #include "importgl.h"
 #include "textures.h"
 #include "vector"
+#include "android/log.h"
 
 struct RegionInfo {
 	int textureId;
@@ -130,21 +132,17 @@ void drawSprite(Sprite *spr) {
 
 // returns width of resulting string
 int drawNumber(int number, float x, float y, float height) {
-	int reverse = 0;
-	while (number > 0)
-	{
-		reverse = reverse * 10;
-		reverse = reverse + number % 10;
-		number /= 10;
-	}
+	int digitCount = 1;
+	if (number > 0)
+		digitCount = (int) log10((float) number) + 1;
+	__android_log_print(ANDROID_LOG_INFO, "Asteroids", "number=%d digitCount=%d", number, digitCount);
 	int offsetX = 0;
-	do {
-		int digit = reverse % 10;
+	for (int i = digitCount - 1; i >= 0; i--) {
+		int digit = ((int) (number / pow(10.0f, i))) % 10;
 		int digitWidth = digits[digit].width * height / digits[digit].height;
 		drawTextureRegion(&digits[digit], x + offsetX, y, digitWidth, height);
 		offsetX += digitWidth;
-		reverse /= 10;
-	} while (reverse > 0);
+	}
 	return offsetX;
 }
 
