@@ -24,7 +24,8 @@ static int starCount;
 static Vector2 *stars;
 
 static const int SHIP_STATE_ACTIVE = 1;
-static const int SHIP_STATE_DESTROYED = 2;
+static const int SHIP_STATE_DESTROYING = 2;
+static const int SHIP_STATE_DESTROYED = 3;
 typedef struct Ship
 {
 	float speed;
@@ -39,7 +40,10 @@ static const float SHIP_ACCELERATION = 0.1f;
 static const float SHIP_TOP_SPEED = 0.3f;
 static const float SHIP_MAX_ANGULAR_VELOCITY = PI;
 static const float SHIP_MIN_ANGULAR_VELOCITY = PI / 12;
+static const float SHIP_DESTROY_PERIOD = 1.0f;
+static const float SHIP_DESTROY_ROTATE_VELOCITY = PI * 4;
 static Ship ship;
+static float destroyTime;
 
 static const int ASTEROID_SIZE_SMALL = 1;
 static const int ASTEROID_SIZE_LARGE = 2;
@@ -134,6 +138,7 @@ static void createShip() {
 	ship.points[3].x = shipWidth / 2;
 	ship.points[3].y = -shipHeight / 2;
 
+	ship.speed = 0;
 	ship.acceleration = scale * SHIP_ACCELERATION;
 	ship.topSpeed = scale * SHIP_TOP_SPEED;
 	ship.state = SHIP_STATE_ACTIVE;
@@ -191,6 +196,19 @@ static int createLargeAsteroid() {
 		}
 	}
 	return 0;
+}
+
+static void updateShip(float interval) {
+	if (ship.state == SHIP_STATE_DESTROYING) {
+		destroyTime += interval;
+		if (destroyTime > SHIP_DESTROY_PERIOD) {
+			ship.state = SHIP_STATE_DESTROYED;
+		} else {
+			for (int i = 0; i < 4; i++) {
+				vecRotate(&ship.points[i], SHIP_DESTROY_ROTATE_VELOCITY * interval);
+			}
+		}
+	}
 }
 
 static void updateAsteroids(float interval, float yDistance) {
@@ -279,7 +297,8 @@ static void checkDeath() {
 			count = ASTEROID_VERTEX_COUNT;
 		}
 		if (polygonsIntersect(asteroids[i].points, offset, count, ship.points, 0, 4)) {
-			ship.state = SHIP_STATE_DESTROYED;
+			ship.state = SHIP_STATE_DESTROYING;
+			destroyTime = 0.0f;
 			break;
 		}
 	}
@@ -320,11 +339,22 @@ static void renderStars() {
 }
 
 static void renderShip() {
-	if (ship.state == SHIP_STATE_ACTIVE) {
+	if (ship.state != SHIP_STATE_DESTROYED) {
+		float scaleRatio = 1.0f;
+		if (ship.state == SHIP_STATE_DESTROYING) {
+			scaleRatio = (SHIP_DESTROY_PERIOD - destroyTime) / SHIP_DESTROY_PERIOD;
+			glMatrixMode(GL_PROJECTION_MATRIX);
+			glScalef(scaleRatio, scaleRatio, scaleRatio);
+		}
 		glColor(SHIP_COLOR);
 		glVertexPointer(2, GL_FLOAT, 0, ship.points);
 		glEnableClientState(GL_VERTEX_ARRAY);
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+		if (ship.state == SHIP_STATE_DESTROYING) {
+			scaleRatio = 1 / scaleRatio;
+			glMatrixMode(GL_PROJECTION_MATRIX);
+			glScalef(scaleRatio, scaleRatio, scaleRatio);
+		}
 	}
 }
 
@@ -398,8 +428,7 @@ void gameRestart() {
 	std::vector<Asteroid>().swap(asteroids);
 	std::vector<Bullet>().swap(bullets);
 	largeAsteroidCount = 0;
-	ship.state = SHIP_STATE_ACTIVE;
-	ship.speed = 0;
+	createShip();
 	score = 0;
 	timePassed = 0;
 	combo = 0;
@@ -429,14 +458,15 @@ void gameUpdate(float interval) {
 	if (ship.speed > ship.topSpeed)
 		ship.speed = ship.topSpeed;
 	float yDistance = ship.speed * interval;
+	updateShip(interval);
 	updateStars(yDistance);
 	updateAsteroids(interval, yDistance);
 	updateBullets(interval, yDistance);
-	checkDeath();
+	if (ship.state == SHIP_STATE_ACTIVE)
+		checkDeath();
 	comboTime += interval;
-	if (comboTime > COMBO_TIMEOUT) {
+	if (comboTime > COMBO_TIMEOUT)
 		combo = 0;
-	}
 	if (gameIsRunning())
 		timePassed += interval;
 }
