@@ -15,6 +15,7 @@ LOCAL_SRC_FILES := \
     gameover.cpp \
     importgl.cpp \
     input.cpp \
+    mainmenu.cpp \
     polygon.cpp \
     util.cpp \
     vector2.cpp \

@@ -33,7 +33,7 @@ void gameOverInit(int width, int height) {
 void gameOverProcessInput() {
 	if (wasTouched()) {
 		if (spriteTouched(&restartButton, getTouchX(), getTouchY())) {
-			restartGame();
+			startGame();
 		}
 	}
 }
@@ -51,7 +51,6 @@ void gameOverRender() {
 	glColor(BLOOD_COLOR);
 	glVertexPointer(2, GL_FLOAT, 8, bloodPoints);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-	glFlush();
 	glDisableClientState(GL_VERTEX_ARRAY);
 
 	glColor(0xffffffff);

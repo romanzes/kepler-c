@@ -17,6 +17,6 @@ void appInit();
 void appDeinit();
 void appResize(int width, int height);
 void appRender(float interval, int width, int height);
-void restartGame();
+void startGame();
 
 #endif // !APP_H_INCLUDED

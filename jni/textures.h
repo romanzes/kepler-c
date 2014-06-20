@@ -2,13 +2,16 @@
 #define TEXTURES_H_
 
 const int REGION_REFRESH_BUTTON = 0;
-const int REGION_SCORE_STRING = 1;
-const int REGION_TIME_STRING = 2;
-const int REGION_COMBO_STRING = 3;
-const int REGION_COLON_STRING = 4;
-const int REGION_MINUS_SIGN = 5;
-const int REGION_PLUS_SIGN = 6;
-const int REGION_NUMBER_0 = 7;
+const int REGION_START_BUTTON = 1;
+const int REGION_SCORE_STRING = 2;
+const int REGION_TIME_STRING = 3;
+const int REGION_COMBO_STRING = 4;
+const int REGION_COLON_STRING = 5;
+const int REGION_MINUS_SIGN = 6;
+const int REGION_PLUS_SIGN = 7;
+const int REGION_TITLE1_STRING = 8;
+const int REGION_TITLE2_STRING = 9;
+const int REGION_NUMBER_0 = 10;
 
 typedef struct {
 	int textureId;

@@ -23,6 +23,7 @@ static const float STAR_INTERVAL = 0.1f;
 static int starCount;
 static Vector2 *stars;
 
+static const int SHIP_STATE_IDLE = 0;
 static const int SHIP_STATE_ACTIVE = 1;
 static const int SHIP_STATE_INVULNERABLE = 2;
 static const int SHIP_STATE_DESTROYING = 3;
@@ -88,11 +89,9 @@ static const int BULLET_COLOR = 0xffff0000;
 static const int INCREASE_TIME_COLOR = 0xff00ff00;
 static const int DECREASE_TIME_COLOR = 0xffff0000;
 
-extern const int REGION_SCORE_STRING;
 static Sprite scoreString;
 static int score;
 
-extern const int REGION_TIME_STRING;
 static Sprite timeString;
 static float timeRemaining;
 static const int INITIAL_TIME = 60;
@@ -101,7 +100,6 @@ static float timeChangeIndicatorTime;
 static float timeChangeIndicatorValue;
 static const int COLLISION_TIME_PENALTY = 30;
 
-extern const int REGION_COMBO_STRING;
 static Sprite comboString;
 static int combo;
 static float comboTime;
@@ -156,7 +154,7 @@ static void createShip() {
 	ship.speed = 0;
 	ship.acceleration = scale * SHIP_ACCELERATION;
 	ship.topSpeed = scale * SHIP_TOP_SPEED;
-	ship.state = SHIP_STATE_ACTIVE;
+	ship.state = SHIP_STATE_IDLE;
 }
 
 static void updateStars(float yDistance) {
@@ -441,6 +439,8 @@ static void renderBullets() {
 }
 
 static void renderGui() {
+	if (ship.state == SHIP_STATE_IDLE)
+		return;
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	glOrthof(0.0f, scrW, 0, scrH, -1.0f, 1.0f);
@@ -479,6 +479,7 @@ void gameRestart() {
 	combo = 0;
 	comboTime = COMBO_TIMEOUT;
 	timeChangeIndicatorTime = TIME_CHANGE_INDICATOR_TIMEOUT;
+	ship.state = SHIP_STATE_ACTIVE;
 }
 
 void gameInit(float width, float height) {
@@ -490,7 +491,10 @@ void gameInit(float width, float height) {
 	activeSpaceRadius = screenRadius * 3 / 2;
 	srand(time(0));
 	createStars();
-	gameRestart();
+	createShip();
+	comboTime = COMBO_TIMEOUT;
+	timeChangeIndicatorTime = TIME_CHANGE_INDICATOR_TIMEOUT + 1;
+	timeRemaining = INITIAL_TIME;
 }
 
 void gameProcessInput(float interval) {
@@ -524,18 +528,20 @@ void gameUpdate(float interval) {
 	float yDistance = ship.speed * interval;
 	updateShip(interval);
 	updateStars(yDistance);
-	updateAsteroids(interval, yDistance);
-	updateBullets(interval, yDistance);
-	if (ship.state == SHIP_STATE_ACTIVE)
-		checkDeath();
-	comboTime += interval;
-	timeChangeIndicatorTime += interval;
-	if (comboTime > COMBO_TIMEOUT)
-		combo = 0;
-	if (gameIsRunning()) {
-		timeRemaining -= interval;
-		if (timeRemaining < 0)
-			timeRemaining = 0;
+	if (ship.state != SHIP_STATE_IDLE) {
+		updateAsteroids(interval, yDistance);
+		updateBullets(interval, yDistance);
+		if (ship.state == SHIP_STATE_ACTIVE)
+			checkDeath();
+		comboTime += interval;
+		timeChangeIndicatorTime += interval;
+		if (comboTime > COMBO_TIMEOUT)
+			combo = 0;
+		if (gameIsRunning()) {
+			timeRemaining -= interval;
+			if (timeRemaining < 0)
+				timeRemaining = 0;
+		}
 	}
 }
 

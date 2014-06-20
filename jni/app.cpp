@@ -2,24 +2,30 @@
 #include "game.h"
 #include "gameover.h"
 #include "importgl.h"
+#include "mainmenu.h"
 #include "textures.h"
 #include "util.h"
 
-#define SCREEN_GAMEPLAY 1
-#define SCREEN_GAME_OVER 2
+#define SCREEN_MAIN_MENU 1
+#define SCREEN_GAMEPLAY 2
+#define SCREEN_GAME_OVER 3
 static int currentScreen;
 
 // Called from the app framework.
 void appInit() {
 	loadTextures();
-	currentScreen = SCREEN_GAMEPLAY;
+	currentScreen = SCREEN_MAIN_MENU;
 }
 
 // Called from the app framework.
 void appResize(int width, int height) {
 	switch (currentScreen) {
-	case SCREEN_GAMEPLAY:
+	case SCREEN_MAIN_MENU:
 		gameInit(width, height);
+		mainMenuInit(width, height);
+		break;
+	case SCREEN_GAMEPLAY:
+		gameRestart();
 		break;
 	case SCREEN_GAME_OVER:
 		gameOverInit(width, height);
@@ -33,6 +39,12 @@ void appResize(int width, int height) {
  */
 void appRender(float interval, int width, int height) {
 	switch (currentScreen) {
+	case SCREEN_MAIN_MENU:
+		gameUpdate(interval);
+		gameRender();
+		mainMenuProcessInput();
+		mainMenuRender();
+		break;
 	case SCREEN_GAMEPLAY:
 		gameProcessInput(interval);
 		gameUpdate(interval);
@@ -57,7 +69,7 @@ void appDeinit() {
 	freeTextures();
 }
 
-void restartGame() {
+void startGame() {
 	gameRestart();
 	currentScreen = SCREEN_GAMEPLAY;
 }
