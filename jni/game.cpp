@@ -58,6 +58,7 @@ typedef struct
 	Vector2 velocity;
 	float angularVelocity;
 	Vector2 *points;
+	int color;
 } Asteroid;
 static const int ASTEROID_VERTEX_COUNT = 7;
 static const float ASTEROID_RADIUS = 0.1f;
@@ -81,7 +82,8 @@ static std::vector<Bullet> bullets;
 static const int SPACE_COLOR = 0xff000000;
 static const int STAR_COLOR = 0xffffffff;
 static const int SHIP_COLOR = 0xff0000ff;
-static const int ASTEROID_COLOR = 0xffff6a00;
+static const int ASTEROID_COLORS[] = { 0xffff6a00, 0xa0a0a0, 0xb200ff, 0xffd800 };
+static const int ASTEROID_COLOR_COUNT = 4;
 static const int BULLET_COLOR = 0xffff0000;
 static const int INCREASE_TIME_COLOR = 0xff00ff00;
 static const int DECREASE_TIME_COLOR = 0xffff0000;
@@ -203,6 +205,7 @@ static int createLargeAsteroid() {
 			newAsteroid.angularVelocity = frand(-ASTEROID_MAX_ANGULAR_VELOCITY, ASTEROID_MAX_ANGULAR_VELOCITY);
 			newAsteroid.size = ASTEROID_SIZE_LARGE;
 			newAsteroid.vertexCount = ASTEROID_VERTEX_COUNT + 2;
+			newAsteroid.color = ASTEROID_COLORS[rand() % ASTEROID_COLOR_COUNT];
 			asteroids.push_back(newAsteroid);
 			largeAsteroidCount++;
 			return 1;
@@ -271,6 +274,7 @@ static void splitAsteroid(int index) {
 				newAsteroid.points[1].y - newAsteroid.points[0].y);
 		newAsteroid.velocity.x = asteroids[index].velocity.x + sin(velocityAngle) * scale * ASTEROID_EXPLOSION_VELOCITY;
 		newAsteroid.velocity.y = asteroids[index].velocity.y + cos(velocityAngle) * scale * ASTEROID_EXPLOSION_VELOCITY;
+		newAsteroid.color = asteroids[index].color;
 		asteroids.push_back(newAsteroid);
 	}
 }
@@ -404,10 +408,10 @@ static void renderShip() {
 }
 
 static void renderAsteroids() {
-	glColor(ASTEROID_COLOR);
 	glEnableClientState(GL_VERTEX_ARRAY);
 	int i;
 	for (i = 0; i < asteroids.size(); i++) {
+		glColor(asteroids[i].color);
 		glVertexPointer(2, GL_FLOAT, 0, asteroids[i].points);
 		GLenum mode = asteroids[i].size == ASTEROID_SIZE_LARGE ? GL_TRIANGLE_FAN : GL_TRIANGLES;
 		glDrawArrays(mode, 0, asteroids[i].vertexCount);
