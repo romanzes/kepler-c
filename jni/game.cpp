@@ -24,8 +24,9 @@ static int starCount;
 static Vector2 *stars;
 
 static const int SHIP_STATE_ACTIVE = 1;
-static const int SHIP_STATE_DESTROYING = 2;
-static const int SHIP_STATE_DESTROYED = 3;
+static const int SHIP_STATE_INVULNERABLE = 2;
+static const int SHIP_STATE_DESTROYING = 3;
+static const int SHIP_STATE_DESTROYED = 4;
 typedef struct Ship
 {
 	float speed;
@@ -42,8 +43,11 @@ static const float SHIP_MAX_ANGULAR_VELOCITY = PI;
 static const float SHIP_MIN_ANGULAR_VELOCITY = PI / 12;
 static const float SHIP_DESTROY_PERIOD = 1.0f;
 static const float SHIP_DESTROY_ROTATE_VELOCITY = PI * 4;
+static const float SHIP_INVULNERABILITY_PERIOD = 2.0f;
+static const float SHIP_INVULNERABILITY_BLINK_PERIOD = 0.1f;
 static Ship ship;
 static float destroyTime;
+static float invulnerabilityTime;
 
 static const int ASTEROID_SIZE_SMALL = 1;
 static const int ASTEROID_SIZE_LARGE = 2;
@@ -79,14 +83,22 @@ static const int STAR_COLOR = 0xffffffff;
 static const int SHIP_COLOR = 0xff0000ff;
 static const int ASTEROID_COLOR = 0xffff6a00;
 static const int BULLET_COLOR = 0xffff0000;
+static const int INCREASE_TIME_COLOR = 0xff00ff00;
+static const int DECREASE_TIME_COLOR = 0xffff0000;
 
 extern const int REGION_SCORE_STRING;
 static Sprite scoreString;
 static int score;
+
 extern const int REGION_TIME_STRING;
 static Sprite timeString;
 static float timeRemaining;
 static const int INITIAL_TIME = 60;
+static const float TIME_CHANGE_INDICATOR_TIMEOUT = 1.0f;
+static float timeChangeIndicatorTime;
+static float timeChangeIndicatorValue;
+static const int COLLISION_TIME_PENALTY = 30;
+
 extern const int REGION_COMBO_STRING;
 static Sprite comboString;
 static int combo;
@@ -200,7 +212,14 @@ static int createLargeAsteroid() {
 }
 
 static void updateShip(float interval) {
-	if (ship.state == SHIP_STATE_DESTROYING) {
+	switch (ship.state) {
+	case SHIP_STATE_INVULNERABLE:
+		invulnerabilityTime += interval;
+		if (invulnerabilityTime > SHIP_INVULNERABILITY_PERIOD) {
+			ship.state = SHIP_STATE_ACTIVE;
+		}
+		break;
+	case SHIP_STATE_DESTROYING:
 		destroyTime += interval;
 		if (destroyTime > SHIP_DESTROY_PERIOD) {
 			ship.state = SHIP_STATE_DESTROYED;
@@ -209,6 +228,7 @@ static void updateShip(float interval) {
 				vecRotate(&ship.points[i], SHIP_DESTROY_ROTATE_VELOCITY * interval);
 			}
 		}
+		break;
 	}
 }
 
@@ -255,14 +275,20 @@ static void splitAsteroid(int index) {
 	}
 }
 
+static void increaseTime(int value) {
+	timeRemaining += value;
+	timeChangeIndicatorValue = value;
+	timeChangeIndicatorTime = 0;
+}
+
 static void increaseScore() {
 	comboTime = 0;
 	combo++;
 	score += combo;
-	int bonusTime = 0;
-	if (combo % 5 == 0)
-		bonusTime = combo;
-	timeRemaining += bonusTime;
+	if (combo % 5 == 0) {
+		int bonusTime = combo / 5;
+		increaseTime(bonusTime);
+	}
 }
 
 static void updateBullets(float interval, float yDistance) {
@@ -298,23 +324,21 @@ static void updateBullets(float interval, float yDistance) {
 }
 
 static void checkDeath() {
-	int dead = 0;
-	if (timeRemaining < 0) {
-		dead = 1;
-	} else {
-		for (int i = 0; i < asteroids.size(); i++) {
-			int offset = 0, count = asteroids[i].vertexCount;
-			if (asteroids[i].size == ASTEROID_SIZE_LARGE) {
-				offset = 1;
-				count = ASTEROID_VERTEX_COUNT;
-			}
-			if (polygonsIntersect(asteroids[i].points, offset, count, ship.points, 0, 4)) {
-				dead = 1;
-				break;
-			}
+	for (int i = 0; i < asteroids.size(); i++) {
+		int offset = 0, count = asteroids[i].vertexCount;
+		if (asteroids[i].size == ASTEROID_SIZE_LARGE) {
+			offset = 1;
+			count = ASTEROID_VERTEX_COUNT;
+		}
+		if (polygonsIntersect(asteroids[i].points, offset, count, ship.points, 0, 4)) {
+			ship.state = SHIP_STATE_INVULNERABLE;
+			combo = 0;
+			invulnerabilityTime = 0;
+			increaseTime(-COLLISION_TIME_PENALTY);
+			break;
 		}
 	}
-	if (dead) {
+	if (timeRemaining < 0) {
 		ship.state = SHIP_STATE_DESTROYING;
 		destroyTime = 0.0f;
 	}
@@ -356,6 +380,11 @@ static void renderStars() {
 
 static void renderShip() {
 	if (ship.state != SHIP_STATE_DESTROYED) {
+		if (ship.state == SHIP_STATE_INVULNERABLE) {
+			int periodNumber = (int) (invulnerabilityTime / SHIP_INVULNERABILITY_BLINK_PERIOD);
+			if (periodNumber % 2)
+				return;
+		}
 		float scaleRatio = 1.0f;
 		if (ship.state == SHIP_STATE_DESTROYING) {
 			scaleRatio = (SHIP_DESTROY_PERIOD - destroyTime) / SHIP_DESTROY_PERIOD;
@@ -422,6 +451,14 @@ static void renderGui() {
 		drawSprite(&comboString);
 		drawNumber(combo, comboString.x + comboString.width, comboString.y, comboString.height);
 	}
+	if (timeChangeIndicatorTime <= TIME_CHANGE_INDICATOR_TIMEOUT) {
+		if (timeChangeIndicatorValue < 0)
+			glColor(DECREASE_TIME_COLOR);
+		else
+			glColor(INCREASE_TIME_COLOR);
+		drawSignedNumber(timeChangeIndicatorValue, timeString.x + timeString.width,
+				timeString.y - timeString.height * 2, timeString.height);
+	}
 	glDisable(GL_BLEND);
 }
 
@@ -437,6 +474,7 @@ void gameRestart() {
 	timeRemaining = INITIAL_TIME;
 	combo = 0;
 	comboTime = COMBO_TIMEOUT;
+	timeChangeIndicatorTime = TIME_CHANGE_INDICATOR_TIMEOUT;
 }
 
 void gameInit(float width, float height) {
@@ -452,14 +490,19 @@ void gameInit(float width, float height) {
 }
 
 void gameProcessInput(float interval) {
-	if (wasTouched() && ship.state == SHIP_STATE_ACTIVE) {
-		Bullet newBullet;
-		newBullet.position.x = 0;
-		newBullet.position.y = 0;
-		newBullet.angle = 0;
-		newBullet.velocity.x = 0;
-		newBullet.velocity.y = scale * BULLET_SPEED;
-		bullets.push_back(newBullet);
+	if (wasTouched()) {
+		switch (ship.state) {
+		case SHIP_STATE_ACTIVE:
+		case SHIP_STATE_INVULNERABLE:
+			Bullet newBullet;
+			newBullet.position.x = 0;
+			newBullet.position.y = 0;
+			newBullet.angle = 0;
+			newBullet.velocity.x = 0;
+			newBullet.velocity.y = scale * BULLET_SPEED;
+			bullets.push_back(newBullet);
+			break;
+		}
 	}
 	float angularVelocity = -SHIP_MAX_ANGULAR_VELOCITY * getAccelerometerX() / 10;
 	if (fabs(angularVelocity) >= SHIP_MIN_ANGULAR_VELOCITY)
@@ -482,6 +525,7 @@ void gameUpdate(float interval) {
 	if (ship.state == SHIP_STATE_ACTIVE)
 		checkDeath();
 	comboTime += interval;
+	timeChangeIndicatorTime += interval;
 	if (comboTime > COMBO_TIMEOUT)
 		combo = 0;
 	if (gameIsRunning()) {

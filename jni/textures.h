@@ -6,7 +6,9 @@ const int REGION_SCORE_STRING = 1;
 const int REGION_TIME_STRING = 2;
 const int REGION_COMBO_STRING = 3;
 const int REGION_COLON_STRING = 4;
-const int REGION_NUMBER_0 = 5;
+const int REGION_MINUS_SIGN = 5;
+const int REGION_PLUS_SIGN = 6;
+const int REGION_NUMBER_0 = 7;
 
 typedef struct {
 	int textureId;
@@ -29,6 +31,7 @@ int spriteTouched(Sprite *spr, float x, float y);
 void drawTextureRegion(TextureRegion *region, float x, float y, float width, float height);
 void drawSprite(Sprite *spr);
 int drawNumber(int number, float x, float y, float height);
+int drawSignedNumber(int number, float x, float y, float height);
 int drawTime(int seconds, float x, float y, float height);
 void freeTextures();
 

@@ -3,7 +3,6 @@
 #include "importgl.h"
 #include "textures.h"
 #include "vector"
-#include "android/log.h"
 
 struct RegionInfo {
 	int textureId;
@@ -16,6 +15,8 @@ struct RegionInfo regions[] = {
 		{ 1, 0, 140, 250, 70 }, // TIME:
 		{ 1, 253, 140, 260, 70 }, // COMBO:
 		{ 1, 300, 0, 25, 70 }, // :
+		{ 1, 386, 0, 55, 70 }, // -
+		{ 1, 441, 0, 55, 70 }, // +
 		{ 1, 331, 0, 55, 70 }, // 0
 		{ 1, 0, 71, 55, 70 }, // 1
 		{ 1, 56, 71, 55, 70 }, // 2
@@ -25,7 +26,7 @@ struct RegionInfo regions[] = {
 		{ 1, 276, 71, 55, 70 }, // 6
 		{ 1, 331, 71, 55, 70 }, // 7
 		{ 1, 386, 71, 55, 70 }, // 8
-		{ 1, 441, 71, 55, 70 }, // 9
+		{ 1, 441, 71, 55, 70 } // 9
 };
 
 static short indices[] = { 0, 1, 2,
@@ -34,7 +35,7 @@ static short indices[] = { 0, 1, 2,
 static std::vector<TextureInfo> textures;
 
 static TextureRegion digits[10];
-static TextureRegion colon;
+static TextureRegion colon, minus, plus;
 
 void loadTextures() {
 	textures.push_back(loadTexture("refresh.png"));
@@ -43,6 +44,8 @@ void loadTextures() {
 		digits[i] = getTextureRegion(REGION_NUMBER_0 + i);
 	}
 	colon = getTextureRegion(REGION_COLON_STRING);
+	minus = getTextureRegion(REGION_MINUS_SIGN);
+	plus = getTextureRegion(REGION_PLUS_SIGN);
 }
 
 static TextureInfo* getTexture(int id) {
@@ -150,6 +153,17 @@ int drawNumber(int number, float x, float y, float height) {
 		offsetX += digitWidth;
 	}
 	return offsetX;
+}
+
+int drawSignedNumber(int number, float x, float y, float height) {
+	TextureRegion sign = plus;
+	if (number < 0) {
+		sign = minus;
+		number = -number;
+	}
+	int signWidth = sign.width * height / sign.height;
+	drawTextureRegion(&sign, x, y, signWidth, height);
+	return signWidth + drawNumber(number, x + signWidth, y, height);
 }
 
 // returns width of resulting string
