@@ -452,7 +452,7 @@ void gameInit(float width, float height) {
 }
 
 void gameProcessInput(float interval) {
-	if (wasTouched()) {
+	if (wasTouched() && ship.state == SHIP_STATE_ACTIVE) {
 		Bullet newBullet;
 		newBullet.position.x = 0;
 		newBullet.position.y = 0;

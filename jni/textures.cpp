@@ -132,15 +132,21 @@ void drawSprite(Sprite *spr) {
 
 // returns width of resulting string
 int drawNumber(int number, float x, float y, float height) {
+	int width = 0;
+	int number2 = number;
 	int digitCount = 1;
 	if (number > 0)
 		digitCount = (int) log10((float) number) + 1;
-	__android_log_print(ANDROID_LOG_INFO, "Asteroids", "number=%d digitCount=%d", number, digitCount);
+	int digit[digitCount];
+	for (int i = 0; i < digitCount; i++) {
+		digit[i] = number2 % 10;
+		number2 /= 10;
+	}
+
 	int offsetX = 0;
 	for (int i = digitCount - 1; i >= 0; i--) {
-		int digit = ((int) (number / pow(10.0f, i))) % 10;
-		int digitWidth = digits[digit].width * height / digits[digit].height;
-		drawTextureRegion(&digits[digit], x + offsetX, y, digitWidth, height);
+		int digitWidth = digits[digit[i]].width * height / digits[digit[i]].height;
+		drawTextureRegion(&digits[digit[i]], x + offsetX, y, digitWidth, height);
 		offsetX += digitWidth;
 	}
 	return offsetX;
