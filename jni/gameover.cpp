@@ -28,6 +28,8 @@ void gameOverInit(int width, int height) {
 	float btnHeight = btnWidth;
 
 	createSprite(&restartButton, getTextureRegion(REGION_REFRESH_BUTTON), (scrW - btnWidth) / 2, btnHeight / 2, btnWidth, btnHeight);
+
+	resetInput();
 }
 
 void gameOverProcessInput() {

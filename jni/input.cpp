@@ -2,7 +2,7 @@
 
 float accelerometerX, accelerometerY, accelerometerZ;
 static int wasTouchedFlag;
-static int isPressedFlag;
+static int isTouchedFlag;
 static float touchX, touchY;
 
 void setAccelerometerValues(float x, float y, float z) {
@@ -24,16 +24,18 @@ float getAccelerometerZ() {
 }
 
 void touchDown(float x, float y) {
-	wasTouchedFlag = 1;
-	isPressedFlag = 1;
+	isTouchedFlag = 1;
 	touchX = x;
 	touchY = y;
 }
 
 void touchUp(float x, float y) {
-	isPressedFlag = 0;
-	touchX = x;
-	touchY = y;
+	if (isTouchedFlag) {
+		wasTouchedFlag = 1;
+		isTouchedFlag = 0;
+		touchX = x;
+		touchY = y;
+	}
 }
 
 int wasTouched() {
@@ -43,7 +45,7 @@ int wasTouched() {
 }
 
 int isTouched() {
-	return isPressedFlag;
+	return isTouchedFlag;
 }
 
 float getTouchX() {
@@ -52,4 +54,9 @@ float getTouchX() {
 
 float getTouchY() {
 	return touchY;
+}
+
+void resetInput() {
+	isTouchedFlag = 0;
+	wasTouchedFlag = 0;
 }

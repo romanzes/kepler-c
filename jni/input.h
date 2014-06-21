@@ -11,5 +11,6 @@ int wasTouched();
 int isTouched();
 float getTouchX();
 float getTouchY();
+void resetInput();
 
 #endif /* INPUT_H_ */
