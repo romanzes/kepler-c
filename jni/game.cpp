@@ -90,6 +90,8 @@ static const int ASTEROID_COLOR_COUNT = 4;
 static const int BULLET_COLOR = 0xffff0000;
 static const int INCREASE_TIME_COLOR = 0xff00ff00;
 static const int DECREASE_TIME_COLOR = 0xffff0000;
+static const int LOW_TIME_COLOR = 0xffff0000;
+static const int COMBO_COLOR = 0xffffd800;
 
 static Sprite scoreString;
 static int score;
@@ -454,8 +456,12 @@ static void renderGui() {
 	drawSprite(&scoreString);
 	drawNumber(score, scoreString.x + scoreString.width, scoreString.y, scoreString.height);
 	drawSprite(&timeString);
+	if (timeRemaining <= 5) {
+		glColor(LOW_TIME_COLOR);
+	}
 	drawTime((int) timeRemaining, timeString.x + timeString.width, timeString.y, timeString.height);
 	if (combo > 1) {
+		glColor(COMBO_COLOR);
 		drawSprite(&comboString);
 		drawNumber(combo, comboString.x + comboString.width, comboString.y, comboString.height);
 	}
