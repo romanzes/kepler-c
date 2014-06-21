@@ -80,7 +80,7 @@ static const float BULLET_WIDTH = 0.01f;
 static const float BULLET_SPEED = 1.0f;
 static std::vector<Bullet> bullets;
 static float lastBulletTime = 0;
-static const float BULLET_INTERVAL = 0.2f;
+static const float BULLET_INTERVAL = 0.25f;
 
 static const int SPACE_COLOR = 0xff000000;
 static const int STAR_COLOR = 0xffffffff;
@@ -346,6 +346,7 @@ static void checkDeath() {
 	if (timeRemaining < 0) {
 		ship.state = SHIP_STATE_DESTROYING;
 		destroyTime = 0.0f;
+		timeRemaining = 0;
 	}
 }
 
@@ -535,17 +536,14 @@ void gameUpdate(float interval) {
 	if (ship.state != SHIP_STATE_IDLE) {
 		updateAsteroids(interval, yDistance);
 		updateBullets(interval, yDistance);
-		if (ship.state == SHIP_STATE_ACTIVE)
+		if (ship.state == SHIP_STATE_ACTIVE) {
+			timeRemaining -= interval;
 			checkDeath();
+		}
 		comboTime += interval;
 		timeChangeIndicatorTime += interval;
 		if (comboTime > COMBO_TIMEOUT)
 			combo = 0;
-		if (gameIsRunning()) {
-			timeRemaining -= interval;
-			if (timeRemaining < 0)
-				timeRemaining = 0;
-		}
 	}
 }
 
