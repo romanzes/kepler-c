@@ -43,7 +43,12 @@ extern "C"
 
 	JNIEXPORT void JNICALL Java_ru_footmade_keplerc_MainGLSurfaceView_nativeTouchDown(JNIEnv* env,
 			jobject thiz, jfloat x, jfloat y) {
-		touchScreen(x, sWindowHeight - y);
+		touchDown(x, sWindowHeight - y);
+	}
+
+	JNIEXPORT void JNICALL Java_ru_footmade_keplerc_MainGLSurfaceView_nativeTouchUp(JNIEnv* env,
+			jobject thiz, jfloat x, jfloat y) {
+		touchUp(x, sWindowHeight - y);
 	}
 
 	JNIEXPORT void JNICALL Java_ru_footmade_keplerc_MainGLSurfaceView_nativePause(JNIEnv* env) {

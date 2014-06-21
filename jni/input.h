@@ -5,8 +5,10 @@ void setAccelerometerValues(float x, float y, float z);
 float getAccelerometerX();
 float getAccelerometerY();
 float getAccelerometerZ();
-void touchScreen(float x, float y);
+void touchDown(float x, float y);
+void touchUp(float x, float y);
 int wasTouched();
+int isTouched();
 float getTouchX();
 float getTouchY();
 

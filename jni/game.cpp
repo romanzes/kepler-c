@@ -79,6 +79,8 @@ static const float BULLET_LENGTH = 0.05f;
 static const float BULLET_WIDTH = 0.01f;
 static const float BULLET_SPEED = 1.0f;
 static std::vector<Bullet> bullets;
+static float lastBulletTime = 0;
+static const float BULLET_INTERVAL = 0.2f;
 
 static const int SPACE_COLOR = 0xff000000;
 static const int STAR_COLOR = 0xffffffff;
@@ -294,6 +296,7 @@ static void increaseScore() {
 }
 
 static void updateBullets(float interval, float yDistance) {
+	lastBulletTime += interval;
 	for (int i = 0; i < bullets.size(); i++) {
 		vecMulAddV(&bullets[i].position, &bullets[i].velocity, interval);
 		bullets[i].position.y -= yDistance;
@@ -498,7 +501,7 @@ void gameInit(float width, float height) {
 }
 
 void gameProcessInput(float interval) {
-	if (wasTouched()) {
+	if (isTouched() && lastBulletTime >= BULLET_INTERVAL) {
 		switch (ship.state) {
 		case SHIP_STATE_ACTIVE:
 		case SHIP_STATE_INVULNERABLE:
@@ -509,6 +512,7 @@ void gameProcessInput(float interval) {
 			newBullet.velocity.x = 0;
 			newBullet.velocity.y = scale * BULLET_SPEED;
 			bullets.push_back(newBullet);
+			lastBulletTime = 0;
 			break;
 		}
 	}

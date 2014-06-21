@@ -99,6 +99,8 @@ class MainGLSurfaceView extends GLSurfaceView {
 	public boolean onTouchEvent(final MotionEvent event) {
 		if (event.getAction() == MotionEvent.ACTION_DOWN) {
 			nativeTouchDown(event.getX(), event.getY());
+		} else if (event.getAction() == MotionEvent.ACTION_UP) {
+			nativeTouchUp(event.getX(), event.getY());
 		}
 		return true;
 	}
@@ -118,6 +120,8 @@ class MainGLSurfaceView extends GLSurfaceView {
 	MainRenderer mRenderer;
 
 	private static native void nativeTouchDown(float x, float y);
+	
+	private static native void nativeTouchUp(float x, float y);
 
 	private static native void nativePause();
 
