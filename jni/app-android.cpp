@@ -11,7 +11,7 @@ static int sWindowWidth = 320;
 static int sWindowHeight = 480;
 
 static JNIEnv *g_env;
-static jobject g_pngmgr;
+static jobject g_pngmgr, g_vibrator;
 
 extern "C"
 {
@@ -21,9 +21,10 @@ extern "C"
 	}
 
 	/* Call to initialize the graphics state */
-	JNIEXPORT void JNICALL Java_ru_footmade_keplerc_MainRenderer_nativeInit(JNIEnv* env, jobject thiz, jobject pngmgr) {
+	JNIEXPORT void JNICALL Java_ru_footmade_keplerc_MainRenderer_nativeInit(JNIEnv* env, jobject thiz, jobject pngmgr, jobject vibrator) {
 		g_env = env;
 		g_pngmgr = g_env->NewGlobalRef(pngmgr);
+		g_vibrator = g_env->NewGlobalRef(vibrator);
 		importGLInit();
 		appInit();
 	}
@@ -37,6 +38,7 @@ extern "C"
 	/* Call to finalize the graphics state */
 	JNIEXPORT void JNICALL Java_ru_footmade_keplerc_MainRenderer_nativeDone(JNIEnv* env) {
 		g_env->DeleteGlobalRef(g_pngmgr);
+		g_env->DeleteGlobalRef(g_vibrator);
 		appDeinit();
 		importGLDeinit();
 	}
@@ -90,4 +92,10 @@ TextureInfo loadTexture(std::string path) {
 	result.width = g_env->GetIntField(textureInfo, width);
 	result.height = g_env->GetIntField(textureInfo, height);
 	return result;
+}
+
+void vibrate(int millis) {
+	jclass cls = g_env->GetObjectClass(g_vibrator);
+	jmethodID mid = g_env->GetMethodID(cls, "vibrate", "(I)V");
+	g_env->CallVoidMethod(g_vibrator, mid, millis);
 }

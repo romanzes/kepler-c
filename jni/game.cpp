@@ -1,6 +1,7 @@
 #include <float.h>
 #include <math.h>
 #include <stdlib.h>
+#include "app.h"
 #include "importgl.h"
 #include "input.h"
 #include "polygon.h"
@@ -342,6 +343,7 @@ static void checkDeath() {
 			combo = 0;
 			invulnerabilityTime = 0;
 			increaseTime(-COLLISION_TIME_PENALTY);
+			vibrate(200);
 			break;
 		}
 	}

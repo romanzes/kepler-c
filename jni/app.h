@@ -13,6 +13,7 @@ typedef struct {
 extern void appAccelerometerUpdate(float x, float y, float z);
 extern void appTouch(float touchX, float touchY);
 extern TextureInfo loadTexture(std::string path);
+extern void vibrate(int millis);
 void appInit();
 void appDeinit();
 void appResize(int width, int height);

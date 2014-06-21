@@ -18,11 +18,13 @@ import android.opengl.GLES10;
 import android.opengl.GLSurfaceView;
 import android.opengl.GLUtils;
 import android.os.Bundle;
+import android.os.Vibrator;
 import android.util.Log;
 import android.view.MotionEvent;
 
 public class MainActivity extends Activity implements SensorEventListener {
 	static TextureLoader pngManager;
+	static VibratorHelper vibrator;
 
 	private SensorManager sensorManager;
 	private Sensor accelerometer;
@@ -35,6 +37,7 @@ public class MainActivity extends Activity implements SensorEventListener {
 		setContentView(mGLView);
 		
 		pngManager = new TextureLoader(this);
+		vibrator = new VibratorHelper(this);
 
 		sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
 		accelerometer = sensorManager
@@ -130,7 +133,7 @@ class MainGLSurfaceView extends GLSurfaceView {
 
 class MainRenderer implements GLSurfaceView.Renderer {
 	public void onSurfaceCreated(GL10 gl, EGLConfig config) {
-		nativeInit(MainActivity.pngManager);
+		nativeInit(MainActivity.pngManager, MainActivity.vibrator);
 	}
 
 	public void onSurfaceChanged(GL10 gl, int w, int h) {
@@ -141,7 +144,7 @@ class MainRenderer implements GLSurfaceView.Renderer {
 		nativeRender();
 	}
 
-	private static native void nativeInit(TextureLoader pngManager);
+	private static native void nativeInit(TextureLoader pngManager, VibratorHelper vibrator);
 
 	private static native void nativeResize(int w, int h);
 
@@ -184,4 +187,16 @@ class TextureLoader {
 class TextureInfo {
 	int textureId;
 	int width, height;
+}
+
+class VibratorHelper {
+	private Vibrator vibratorService;
+	
+	public VibratorHelper(Context context) {
+		vibratorService = (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
+	}
+	
+	public void vibrate(int millis) {
+		vibratorService.vibrate(millis);
+	}
 }
