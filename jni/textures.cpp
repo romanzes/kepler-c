@@ -188,8 +188,8 @@ int drawTime(int seconds, float x, float y, float height) {
 }
 
 void freeTextures() {
-	for (int i = 0; i < textures.size(); i++) {
-		glDeleteTextures(1, &textures[i].textureId);
+	for (TextureInfo &texture : textures) {
+		glDeleteTextures(1, &texture.textureId);
 	}
 	std::vector<TextureInfo>().swap(textures);
 }

@@ -8,8 +8,10 @@
 #include "textures.h"
 #include "time.h"
 #include "util.h"
-#include "vector"
 #include "vector2.h"
+#include "list"
+
+using namespace std;
 
 #undef PI
 #define PI 3.1415926535897932f
@@ -69,7 +71,7 @@ static const float ASTEROID_MAX_ANGULAR_VELOCITY = PI;
 static const float ASTEROID_EXPLOSION_VELOCITY = 0.1f;
 static int largeAsteroidCount;
 static const int ASTEROID_COUNT = 8;
-static std::vector<Asteroid> asteroids;
+static list<Asteroid> asteroids;
 
 typedef struct {
 	Vector2 position;
@@ -79,14 +81,14 @@ typedef struct {
 static const float BULLET_LENGTH = 0.05f;
 static const float BULLET_WIDTH = 0.01f;
 static const float BULLET_SPEED = 1.0f;
-static std::vector<Bullet> bullets;
+static list<Bullet> bullets;
 static float lastBulletTime = 0;
 static const float BULLET_INTERVAL = 0.25f;
 
 static const int SPACE_COLOR = 0xff000000;
 static const int STAR_COLOR = 0xffffffff;
 static const int SHIP_COLOR = 0xff0000ff;
-static const int ASTEROID_COLORS[] = { 0xffff6a00, 0xa0a0a0, 0xb200ff, 0xffd800 };
+static const int ASTEROID_COLORS[] = { 0xff6a00, 0xa0a0a0, 0xb200ff, 0xffd800 };
 static const int ASTEROID_COLOR_COUNT = 4;
 static const int BULLET_COLOR = 0xffff0000;
 static const int INCREASE_TIME_COLOR = 0xff00ff00;
@@ -181,8 +183,8 @@ static int createLargeAsteroid() {
 		float x = cos(angle) * radius;
 		float y = sin(angle) * radius;
 		int satisfy = 1;
-		for (int i = 0; i < asteroids.size(); i++) {
-			if (vecDistanceF(x, y, asteroids[i].points[0].x, asteroids[i].points[0].y) < scale * ASTEROID_RADIUS * 2) {
+		for(Asteroid& asteroid : asteroids) {
+			if (vecDistanceF(x, y, asteroid.points[0].x, asteroid.points[0].y) < scale * ASTEROID_RADIUS * 2) {
 				satisfy = 0;
 				break;
 			}
@@ -239,19 +241,19 @@ static void updateShip(float interval) {
 }
 
 static void updateAsteroids(float interval, float yDistance) {
-	for (int i = 0; i < asteroids.size(); i++) {
-		for (int j = 0; j < asteroids[i].vertexCount; j++) {
-			asteroids[i].points[j].y -= yDistance;
-			vecMulAddV(&asteroids[i].points[j], &asteroids[i].velocity, interval);
-			vecRotateAround(&asteroids[i].points[j], &asteroids[i].points[0], asteroids[i].angularVelocity * interval);
+	for (auto it = asteroids.begin(); it != asteroids.end(); ++it) {
+		for (int j = 0; j < it->vertexCount; j++) {
+			it->points[j].y -= yDistance;
+			vecMulAddV(&it->points[j], &it->velocity, interval);
+			vecRotateAround(&it->points[j], &it->points[0], it->angularVelocity * interval);
 		}
-		if (vecLenV(&asteroids[i].points[0]) > activeSpaceRadius) {
-			free(asteroids[i].points);
-			if (asteroids[i].size == ASTEROID_SIZE_LARGE) {
+		if (vecLenV(&it->points[0]) > activeSpaceRadius) {
+			free(it->points);
+			if (it->size == ASTEROID_SIZE_LARGE) {
 				largeAsteroidCount--;
 			}
-			asteroids.erase(asteroids.begin() + i);
-			i--;
+			asteroids.erase(it);
+			it--;
 		}
 	}
 	while (largeAsteroidCount < ASTEROID_COUNT) {
@@ -260,24 +262,24 @@ static void updateAsteroids(float interval, float yDistance) {
 	}
 }
 
-static void splitAsteroid(int index) {
+static void splitAsteroid(Asteroid *asteroid) {
 	for (int i = ASTEROID_VERTEX_COUNT, j = 1; j <= ASTEROID_VERTEX_COUNT; i = j++) {
 		Asteroid newAsteroid;
 		newAsteroid.size = ASTEROID_SIZE_SMALL;
 		newAsteroid.vertexCount = 3;
 		newAsteroid.points = (Vector2 *) malloc(3 * sizeof(Vector2));
-		newAsteroid.points[0].x = asteroids[index].points[0].x;
-		newAsteroid.points[0].y = asteroids[index].points[0].y;
-		newAsteroid.points[1].x = asteroids[index].points[i].x;
-		newAsteroid.points[1].y = asteroids[index].points[i].y;
-		newAsteroid.points[2].x = asteroids[index].points[j].x;
-		newAsteroid.points[2].y = asteroids[index].points[j].y;
+		newAsteroid.points[0].x = asteroid->points[0].x;
+		newAsteroid.points[0].y = asteroid->points[0].y;
+		newAsteroid.points[1].x = asteroid->points[i].x;
+		newAsteroid.points[1].y = asteroid->points[i].y;
+		newAsteroid.points[2].x = asteroid->points[j].x;
+		newAsteroid.points[2].y = asteroid->points[j].y;
 		newAsteroid.angularVelocity = 0;
 		float velocityAngle = atan2f(newAsteroid.points[1].x - newAsteroid.points[0].x,
 				newAsteroid.points[1].y - newAsteroid.points[0].y);
-		newAsteroid.velocity.x = asteroids[index].velocity.x + sin(velocityAngle) * scale * ASTEROID_EXPLOSION_VELOCITY;
-		newAsteroid.velocity.y = asteroids[index].velocity.y + cos(velocityAngle) * scale * ASTEROID_EXPLOSION_VELOCITY;
-		newAsteroid.color = asteroids[index].color;
+		newAsteroid.velocity.x = asteroid->velocity.x + sin(velocityAngle) * scale * ASTEROID_EXPLOSION_VELOCITY;
+		newAsteroid.velocity.y = asteroid->velocity.y + cos(velocityAngle) * scale * ASTEROID_EXPLOSION_VELOCITY;
+		newAsteroid.color = asteroid->color;
 		asteroids.push_back(newAsteroid);
 	}
 }
@@ -300,29 +302,28 @@ static void increaseScore() {
 
 static void updateBullets(float interval, float yDistance) {
 	lastBulletTime += interval;
-	for (int i = 0; i < bullets.size(); i++) {
-		vecMulAddV(&bullets[i].position, &bullets[i].velocity, interval);
-		bullets[i].position.y -= yDistance;
-		if (vecLenV(&bullets[i].position) > activeSpaceRadius) {
-			bullets.erase(bullets.begin() + i);
-			i--;
+	for (auto bullet = bullets.begin(); bullet != bullets.end(); ++bullet) {
+		vecMulAddV(&bullet->position, &bullet->velocity, interval);
+		bullet->position.y -= yDistance;
+		if (vecLenV(&bullet->position) > activeSpaceRadius) {
+			bullets.erase(bullet);
+			bullet--;
 		} else {
-			for (int j = 0; j < asteroids.size(); j++) {
-				int offset = 0, count = asteroids[j].vertexCount;
-				if (asteroids[j].size == ASTEROID_SIZE_LARGE) {
+			for (auto asteroid = asteroids.begin(); asteroid != asteroids.end(); ++asteroid) {
+				int offset = 0, count = asteroid->vertexCount;
+				if (asteroid->size == ASTEROID_SIZE_LARGE) {
 					offset = 1;
 					count = ASTEROID_VERTEX_COUNT;
 				}
-				if (polyContainsV(asteroids[j].points, offset, count, &bullets[i].position)) {
-					int index = j;
-					if (asteroids[j].size == ASTEROID_SIZE_LARGE) {
+				if (polyContainsV(asteroid->points, offset, count, &bullet->position)) {
+					if (asteroid->size == ASTEROID_SIZE_LARGE) {
 						largeAsteroidCount--;
-						splitAsteroid(j);
+						splitAsteroid(&*asteroid);
 					}
-					free(asteroids[index].points);
-					asteroids.erase(asteroids.begin() + index);
-					bullets.erase(bullets.begin() + i);
-					i--;
+					free(asteroid->points);
+					asteroids.erase(asteroid);
+					bullets.erase(bullet);
+					bullet--;
 					increaseScore();
 					break;
 				}
@@ -332,13 +333,13 @@ static void updateBullets(float interval, float yDistance) {
 }
 
 static void checkDeath() {
-	for (int i = 0; i < asteroids.size(); i++) {
-		int offset = 0, count = asteroids[i].vertexCount;
-		if (asteroids[i].size == ASTEROID_SIZE_LARGE) {
+	for (Asteroid &asteroid : asteroids) {
+		int offset = 0, count = asteroid.vertexCount;
+		if (asteroid.size == ASTEROID_SIZE_LARGE) {
 			offset = 1;
 			count = ASTEROID_VERTEX_COUNT;
 		}
-		if (polygonsIntersect(asteroids[i].points, offset, count, ship.points, 0, 4)) {
+		if (polygonsIntersect(asteroid.points, offset, count, ship.points, 0, 4)) {
 			ship.state = SHIP_STATE_INVULNERABLE;
 			combo = 0;
 			invulnerabilityTime = 0;
@@ -359,17 +360,17 @@ static void rotateSpace(float angle) {
 	for (i = 0; i < starCount; i++) {
 		vecRotate(&stars[i], angle);
 	}
-	for (i = 0; i < asteroids.size(); i++) {
+	for (Asteroid &asteroid : asteroids) {
 		int j;
-		for (j = 0; j < asteroids[i].vertexCount; j++) {
-			vecRotate(&asteroids[i].points[j], angle);
+		for (j = 0; j < asteroid.vertexCount; j++) {
+			vecRotate(&asteroid.points[j], angle);
 		}
-		vecRotate(&asteroids[i].velocity, angle);
+		vecRotate(&asteroid.velocity, angle);
 	}
-	for (i = 0; i < bullets.size(); i++) {
-		vecRotate(&bullets[i].position, angle);
-		vecRotate(&bullets[i].velocity, angle);
-		bullets[i].angle -= angle;
+	for (Bullet &bullet : bullets) {
+		vecRotate(&bullet.position, angle);
+		vecRotate(&bullet.velocity, angle);
+		bullet.angle -= angle;
 	}
 }
 
@@ -416,11 +417,11 @@ static void renderShip() {
 static void renderAsteroids() {
 	glEnableClientState(GL_VERTEX_ARRAY);
 	int i;
-	for (i = 0; i < asteroids.size(); i++) {
-		glColor(asteroids[i].color);
-		glVertexPointer(2, GL_FLOAT, 0, asteroids[i].points);
-		GLenum mode = asteroids[i].size == ASTEROID_SIZE_LARGE ? GL_TRIANGLE_FAN : GL_TRIANGLES;
-		glDrawArrays(mode, 0, asteroids[i].vertexCount);
+	for (Asteroid &asteroid : asteroids) {
+		glColor(asteroid.color);
+		glVertexPointer(2, GL_FLOAT, 0, asteroid.points);
+		GLenum mode = asteroid.size == ASTEROID_SIZE_LARGE ? GL_TRIANGLE_FAN : GL_TRIANGLES;
+		glDrawArrays(mode, 0, asteroid.vertexCount);
 	}
 }
 
@@ -430,17 +431,17 @@ static void renderBullets() {
 	float halfBulletLength = scale * BULLET_LENGTH / 2;
 	float halfBulletWidth = scale * BULLET_WIDTH / 2;
 	int i;
-	for (i = 0; i < bullets.size(); i++) {
-		float sn = sin(bullets[i].angle);
-		float cs = cos(bullets[i].angle);
-		bulletPointCache[0] = bullets[i].position.x + cs * halfBulletWidth + sn * halfBulletLength;
-		bulletPointCache[1] = bullets[i].position.y + cs * halfBulletLength - sn * halfBulletWidth;
-		bulletPointCache[2] = bullets[i].position.x + cs * halfBulletWidth - sn * halfBulletLength;
-		bulletPointCache[3] = bullets[i].position.y - cs * halfBulletLength - sn * halfBulletWidth;
-		bulletPointCache[4] = bullets[i].position.x - cs * halfBulletWidth + sn * halfBulletLength;
-		bulletPointCache[5] = bullets[i].position.y + cs * halfBulletLength + sn * halfBulletWidth;
-		bulletPointCache[6] = bullets[i].position.x - cs * halfBulletWidth - sn * halfBulletLength;
-		bulletPointCache[7] = bullets[i].position.y - cs * halfBulletLength + sn * halfBulletWidth;
+	for (Bullet &bullet : bullets) {
+		float sn = sin(bullet.angle);
+		float cs = cos(bullet.angle);
+		bulletPointCache[0] = bullet.position.x + cs * halfBulletWidth + sn * halfBulletLength;
+		bulletPointCache[1] = bullet.position.y + cs * halfBulletLength - sn * halfBulletWidth;
+		bulletPointCache[2] = bullet.position.x + cs * halfBulletWidth - sn * halfBulletLength;
+		bulletPointCache[3] = bullet.position.y - cs * halfBulletLength - sn * halfBulletWidth;
+		bulletPointCache[4] = bullet.position.x - cs * halfBulletWidth + sn * halfBulletLength;
+		bulletPointCache[5] = bullet.position.y + cs * halfBulletLength + sn * halfBulletWidth;
+		bulletPointCache[6] = bullet.position.x - cs * halfBulletWidth - sn * halfBulletLength;
+		bulletPointCache[7] = bullet.position.y - cs * halfBulletLength + sn * halfBulletWidth;
 		glVertexPointer(2, GL_FLOAT, 0, bulletPointCache);
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	}
@@ -479,11 +480,11 @@ static void renderGui() {
 }
 
 void gameRestart() {
-	for (int i = 0; i < asteroids.size(); i++) {
-		free(asteroids[i].points);
+	for (Asteroid &asteroid : asteroids) {
+		free(asteroid.points);
 	}
-	std::vector<Asteroid>().swap(asteroids);
-	std::vector<Bullet>().swap(bullets);
+	list<Asteroid>().swap(asteroids);
+	list<Bullet>().swap(bullets);
 	largeAsteroidCount = 0;
 	createShip();
 	score = 0;
@@ -569,9 +570,9 @@ void gameDeinit() {
 	free(stars);
 	free(ship.points);
 	int i;
-	for (i = 0; i < asteroids.size(); i++) {
-		free(asteroids[i].points);
+	for (Asteroid &asteroid : asteroids) {
+		free(asteroid.points);
 	}
-	std::vector<Asteroid>().swap(asteroids);
-	std::vector<Bullet>().swap(bullets);
+	list<Asteroid>().swap(asteroids);
+	list<Bullet>().swap(bullets);
 }
