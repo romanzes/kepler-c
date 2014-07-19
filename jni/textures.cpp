@@ -4,12 +4,7 @@
 #include "textures.h"
 #include "vector"
 
-struct RegionInfo {
-	int textureId;
-	int x, y, w, h;
-};
-
-struct RegionInfo regions[] = {
+static RegionInfo regions[] = {
 		{ 0, 0, 0, 128, 128 }, // refresh button
 		{ 0, 128, 0, 128, 128 }, // start button
 		{ 1, 0, 0, 330, 70 }, // SCORE:
@@ -33,16 +28,11 @@ struct RegionInfo regions[] = {
 };
 
 static short indices[] = { 0, 1, 2,
-						   2, 3, 0 };
+	    				   2, 3, 0 };
 
-static std::vector<TextureInfo> textures;
-
-static TextureRegion digits[10];
-static TextureRegion colon, minus, plus;
-
-void loadTextures() {
-	textures.push_back(loadTexture("refresh.png"));
-	textures.push_back(loadTexture("strings.png"));
+TextureHelper::TextureHelper() {
+	LOGI("Texture helper is creating!");
+	reloadTextures();
 	for (int i = 0; i < 10; i++) {
 		digits[i] = getTextureRegion(REGION_NUMBER_0 + i);
 	}
@@ -51,53 +41,54 @@ void loadTextures() {
 	plus = getTextureRegion(REGION_PLUS_SIGN);
 }
 
-static TextureInfo* getTexture(int id) {
-	return &textures[id];
+void TextureHelper::reloadTextures() {
+	std::vector<TextureInfo>().swap(textures);
+	textures.push_back(loadTexture("refresh.png"));
+	textures.push_back(loadTexture("strings.png"));
 }
 
-TextureRegion getTextureRegion(int regionId) {
-	TextureRegion result;
-	TextureInfo *texture = getTexture(regions[regionId].textureId);
-	result.textureId = texture->textureId;
-	result.u1 = (float) regions[regionId].x / texture->width;
-	result.v1 = (float) regions[regionId].y / texture->height;
-	result.u2 = result.u1 + (float) regions[regionId].w / texture->width;
-	result.v2 = result.v1 + (float) regions[regionId].h / texture->height;
-	result.width = regions[regionId].w;
-	result.height = regions[regionId].h;
-	result.texture[0] = result.u1;
-	result.texture[1] = result.v2;
-	result.texture[2] = result.u2;
-	result.texture[3] = result.v2;
-	result.texture[4] = result.u2;
-	result.texture[5] = result.v1;
-	result.texture[6] = result.u1;
-	result.texture[7] = result.v1;
+TextureRegion *TextureHelper::getTextureRegion(int regionId) {
+	TextureRegion *result = new TextureRegion;
+	TextureInfo texture = textures[regions[regionId].textureId];
+	result->textureId = texture.textureId;
+	result->u1 = (float) regions[regionId].x / texture.width;
+	result->v1 = (float) regions[regionId].y / texture.height;
+	result->u2 = result->u1 + (float) regions[regionId].w / texture.width;
+	result->v2 = result->v1 + (float) regions[regionId].h / texture.height;
+	result->width = regions[regionId].w;
+	result->height = regions[regionId].h;
+	result->texture[0] = result->u1;
+	result->texture[1] = result->v2;
+	result->texture[2] = result->u2;
+	result->texture[3] = result->v2;
+	result->texture[4] = result->u2;
+	result->texture[5] = result->v1;
+	result->texture[6] = result->u1;
+	result->texture[7] = result->v1;
 	return result;
 }
 
-void createSprite(Sprite *spr, TextureRegion region, float x, float y, float width, float height) {
-	spr->region = region;
+Sprite::Sprite(TextureRegion *region, float x, float y, float width, float height) {
+	this->region = region;
+	this->x = x;
+	this->y = y;
+	this->width = width;
+	this->height = height;
 
-	spr->x = x;
-	spr->y = y;
-	spr->width = width;
-	spr->height = height;
-
-	spr->points[0] = x;
-	spr->points[1] = y;
-	spr->points[2] = x + width;
-	spr->points[3] = y;
-	spr->points[4] = x + width;
-	spr->points[5] = y + height;
-	spr->points[6] = x;
-	spr->points[7] = y + height;
+	points[0] = x;
+	points[1] = y;
+	points[2] = x + width;
+	points[3] = y;
+	points[4] = x + width;
+	points[5] = y + height;
+	points[6] = x;
+	points[7] = y + height;
 }
 
-int spriteTouched(Sprite *spr, float x, float y) {
-	float right = spr->x + spr->width;
-	float top = spr->y + spr->height;
-	if (x > spr->x && y > spr->y && x < right && y < top)
+int Sprite::isTouched(float touchX, float touchY) {
+	float right = x + width;
+	float top = y + height;
+	if (touchX > x && touchY > y && touchX < right && touchY < top)
 		return 1;
 	return 0;
 }
@@ -120,7 +111,7 @@ static void drawTexture(int textureId, float *points, float *texture) {
 
 static float pointCache[8];
 
-void drawTextureRegion(TextureRegion *region, float x, float y, float width, float height) {
+void TextureRegion::draw(float x, float y, float width, float height) {
 	pointCache[0] = x;
 	pointCache[1] = y;
 	pointCache[2] = x + width;
@@ -129,15 +120,15 @@ void drawTextureRegion(TextureRegion *region, float x, float y, float width, flo
 	pointCache[5] = y + height;
 	pointCache[6] = x;
 	pointCache[7] = y + height;
-	drawTexture(region->textureId, pointCache, region->texture);
+	drawTexture(textureId, pointCache, texture);
 }
 
-void drawSprite(Sprite *spr) {
-	drawTexture(spr->region.textureId, spr->points, spr->region.texture);
+void Sprite::draw() {
+	drawTexture(region->textureId, points, region->texture);
 }
 
 // returns width of resulting string
-int drawNumber(int number, float x, float y, float height) {
+int TextureHelper::drawNumber(int number, float x, float y, float height) {
 	int width = 0;
 	int number2 = number;
 	int digitCount = 1;
@@ -151,26 +142,26 @@ int drawNumber(int number, float x, float y, float height) {
 
 	int offsetX = 0;
 	for (int i = digitCount - 1; i >= 0; i--) {
-		int digitWidth = digits[digit[i]].width * height / digits[digit[i]].height;
-		drawTextureRegion(&digits[digit[i]], x + offsetX, y, digitWidth, height);
+		int digitWidth = digits[digit[i]]->width * height / digits[digit[i]]->height;
+		digits[digit[i]]->draw(x + offsetX, y, digitWidth, height);
 		offsetX += digitWidth;
 	}
 	return offsetX;
 }
 
-int drawSignedNumber(int number, float x, float y, float height) {
-	TextureRegion sign = plus;
+int TextureHelper::drawSignedNumber(int number, float x, float y, float height) {
+	TextureRegion *sign = plus;
 	if (number < 0) {
 		sign = minus;
 		number = -number;
 	}
-	int signWidth = sign.width * height / sign.height;
-	drawTextureRegion(&sign, x, y, signWidth, height);
+	int signWidth = sign->width * height / sign->height;
+	sign->draw(x, y, signWidth, height);
 	return signWidth + drawNumber(number, x + signWidth, y, height);
 }
 
 // returns width of resulting string
-int drawTime(int seconds, float x, float y, float height) {
+int TextureHelper::drawTime(int seconds, float x, float y, float height) {
 	int minutes = seconds / 60;
 	int minutes1 = minutes / 10;
 	int minutes2 = minutes % 10;
@@ -179,15 +170,16 @@ int drawTime(int seconds, float x, float y, float height) {
 	int seconds2 = seconds % 10;
 	int offsetX = drawNumber(minutes1, x, y, height);
 	offsetX += drawNumber(minutes2, x + offsetX, y, height);
-	int colonWidth = colon.width * height / colon.height;
-	drawTextureRegion(&colon, x + offsetX, y, colonWidth, height);
+	int colonWidth = colon->width * height / colon->height;
+	colon->draw(x + offsetX, y, colonWidth, height);
 	offsetX += colonWidth;
 	offsetX += drawNumber(seconds1, x + offsetX, y, height);
 	offsetX += drawNumber(seconds2, x + offsetX, y, height);
 	return offsetX;
 }
 
-void freeTextures() {
+TextureHelper::~TextureHelper() {
+	LOGI("Texture helper is destroying!");
 	for (TextureInfo &texture : textures) {
 		glDeleteTextures(1, &texture.textureId);
 	}

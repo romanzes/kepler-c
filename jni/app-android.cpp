@@ -2,16 +2,19 @@
 #include <sys/time.h>
 #include <time.h>
 #include <stdint.h>
-#include "importgl.h"
-#include "app.h"
-#include "input.h"
 #include "string"
+#include "app.h"
+#include "common.h"
+#include "importgl.h"
+#include "input.h"
 
-static int sWindowWidth = 320;
-static int sWindowHeight = 480;
+static int sWindowWidth = 0;
+static int sWindowHeight = 0;
 
 static JNIEnv *g_env;
 static jobject g_pngmgr, g_vibrator;
+
+static Application *app = NULL;
 
 extern "C"
 {
@@ -20,43 +23,63 @@ extern "C"
 		setAccelerometerValues(x, y, z);
 	}
 
+	int textureReloadFlag = 0;
 	/* Call to initialize the graphics state */
 	JNIEXPORT void JNICALL Java_ru_footmade_keplerc_MainRenderer_nativeInit(JNIEnv* env, jobject thiz, jobject pngmgr, jobject vibrator) {
+		LOGI("nativeInit");
 		g_env = env;
 		g_pngmgr = g_env->NewGlobalRef(pngmgr);
 		g_vibrator = g_env->NewGlobalRef(vibrator);
-		importGLInit();
-		appInit();
+		if (textureReloadFlag) {
+			Common::getTextureHelper()->reloadTextures();
+		}
 	}
 
+	int inited = 0;
 	JNIEXPORT void JNICALL Java_ru_footmade_keplerc_MainRenderer_nativeResize(JNIEnv* env, jobject thiz, jint w, jint h) {
+		LOGI("nativeResize");
 		sWindowWidth = w;
 		sWindowHeight = h;
-		appResize(w, h);
+		if (inited)
+			app->resizeScreen(w, h);
+		else {
+			importGLInit();
+			app = new Application(w, h);
+			app->start();
+		}
+		inited = 1;
+		textureReloadFlag = 1;
 	}
 
 	/* Call to finalize the graphics state */
 	JNIEXPORT void JNICALL Java_ru_footmade_keplerc_MainRenderer_nativeDone(JNIEnv* env) {
+		LOGI("nativeDone");
 		g_env->DeleteGlobalRef(g_pngmgr);
 		g_env->DeleteGlobalRef(g_vibrator);
-		appDeinit();
 		importGLDeinit();
+		delete app;
 	}
 
 	JNIEXPORT void JNICALL Java_ru_footmade_keplerc_MainGLSurfaceView_nativeTouchDown(JNIEnv* env,
 			jobject thiz, jfloat x, jfloat y) {
+		LOGI("nativeTouchDown");
 		touchDown(x, sWindowHeight - y);
 	}
 
 	JNIEXPORT void JNICALL Java_ru_footmade_keplerc_MainGLSurfaceView_nativeTouchUp(JNIEnv* env,
 			jobject thiz, jfloat x, jfloat y) {
+		LOGI("nativeTouchUp");
 		touchUp(x, sWindowHeight - y);
 	}
 
 	JNIEXPORT void JNICALL Java_ru_footmade_keplerc_MainGLSurfaceView_nativePause(JNIEnv* env) {
+		LOGI("nativePause");
+		if (inited) app->pause();
 	}
 
 	JNIEXPORT void JNICALL Java_ru_footmade_keplerc_MainGLSurfaceView_nativeResume(JNIEnv* env) {
+		LOGI("nativeResume");
+		if (inited) app->resume();
 	}
 
 	static long _getTime(void) {
@@ -74,7 +97,8 @@ extern "C"
 		long curTime = _getTime();
 		float interval = ((float) (curTime - tick)) / 1000;
 		tick = curTime;
-		appRender(interval, sWindowWidth, sWindowHeight);
+
+		if (inited) app->render(interval);
 	}
 } // extern "C"
 

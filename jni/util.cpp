@@ -1,6 +1,6 @@
-#include <stdlib.h>
 #include "importgl.h"
 #include "util.h"
+#include "cstdlib"
 
 void clearScreen(int argb) {
 	GLfloat a = (GLfloat)((argb & 0xff000000) >> 24) / 0xff;

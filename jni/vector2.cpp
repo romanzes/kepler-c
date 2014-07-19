@@ -2,7 +2,7 @@
 #include <float.h>
 #include "vector2.h"
 
-void vecRotate(Vector2 *vec, float angle) {
+void vecRotate(Vector2* vec, float angle) {
 	float cs = cos(angle);
 	float sn = sin(angle);
 	float newX = vec->x * cs - vec->y * sn;
@@ -11,7 +11,7 @@ void vecRotate(Vector2 *vec, float angle) {
 	vec->y = newY;
 }
 
-void vecRotateAround(Vector2 *vec1, Vector2 *vec2, float angle) {
+void vecRotateAround(Vector2* vec1, Vector2* vec2, float angle) {
 	float cs = cos(angle);
 	float sn = sin(angle);
 	float dx = vec1->x - vec2->x;
@@ -22,7 +22,7 @@ void vecRotateAround(Vector2 *vec1, Vector2 *vec2, float angle) {
 	vec1->y = vec2->y + newY;
 }
 
-float vecLenV(Vector2 *vec) {
+float vecLenV(Vector2* vec) {
 	return vecLenF(vec->x, vec->y);
 }
 
@@ -30,7 +30,7 @@ float vecLenF(float x, float y) {
 	return sqrt(x * x + y * y);
 }
 
-float vecDistanceV(Vector2 *vec1, Vector2 *vec2) {
+float vecDistanceV(Vector2* vec1, Vector2* vec2) {
 	return vecDistanceF(vec1->x, vec1->y, vec2->x, vec2->y);
 }
 
@@ -40,7 +40,7 @@ float vecDistanceF(float x1, float y1, float x2, float y2) {
 	return sqrt(dx * dx + dy * dy);
 }
 
-void vecMulAddV(Vector2 *vec1, Vector2 *vec2, float scale) {
+void vecMulAddV(Vector2* vec1, Vector2* vec2, float scale) {
 	vec1->x += vec2->x * scale;
 	vec1->y += vec2->y * scale;
 }

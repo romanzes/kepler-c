@@ -36,8 +36,10 @@ public class MainActivity extends Activity implements SensorEventListener {
 		mGLView = new MainGLSurfaceView(this);
 		setContentView(mGLView);
 		
-		pngManager = new TextureLoader(this);
-		vibrator = new VibratorHelper(this);
+		if (pngManager == null)
+			pngManager = new TextureLoader(this);
+		if (vibrator == null)
+			vibrator = new VibratorHelper(this);
 
 		sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
 		accelerometer = sensorManager
@@ -143,7 +145,7 @@ class MainRenderer implements GLSurfaceView.Renderer {
 	public void onDrawFrame(GL10 gl) {
 		nativeRender();
 	}
-
+	
 	private static native void nativeInit(TextureLoader pngManager, VibratorHelper vibrator);
 
 	private static native void nativeResize(int w, int h);

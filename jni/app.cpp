@@ -1,75 +1,79 @@
 #include "app.h"
-#include "game.h"
+#include "common.h"
 #include "gameover.h"
-#include "importgl.h"
+#include "gamescreen.h"
 #include "mainmenu.h"
-#include "textures.h"
-#include "util.h"
 
-#define SCREEN_MAIN_MENU 1
-#define SCREEN_GAMEPLAY 2
-#define SCREEN_GAME_OVER 3
-static int currentScreen;
-
-// Called from the app framework.
-void appInit() {
-	loadTextures();
-	currentScreen = SCREEN_MAIN_MENU;
+Application::Application(int screenWidth, int screenHeight) {
+	this->screenWidth = screenWidth;
+	this->screenHeight = screenHeight;
+	currentScreen = NULL;
 }
 
-// Called from the app framework.
-void appResize(int width, int height) {
-	switch (currentScreen) {
+void Application::start() {
+	Common::init(*this);
+	setScreen(SCREEN_MAIN_MENU);
+}
+
+void Application::resizeScreen(int width, int height) {
+	screenWidth = width;
+	screenHeight = height;
+	currentScreen->resize(width, height);
+}
+
+int Application::getScreenWidth() const {
+	return screenWidth;
+}
+
+int Application::getScreenHeight() const {
+	return screenHeight;
+}
+
+void Application::setScreen(int screenId) {
+	size_t pointer = (size_t) currentScreen;
+	if (currentScreen != NULL)
+		delete currentScreen;
+	switch (screenId) {
 	case SCREEN_MAIN_MENU:
-		gameInit(width, height);
-		mainMenuInit(width, height);
+		currentScreen = new MainMenu(*this);
 		break;
 	case SCREEN_GAMEPLAY:
-		gameRestart();
+		currentScreen = new GameScreen(*this);
 		break;
 	case SCREEN_GAME_OVER:
-		gameOverInit(width, height);
+		currentScreen = new GameOverScreen(*this);
 		break;
 	}
 }
 
-// Called from the app framework.
-/* The tick is current time in milliseconds, width and height
- * are the image dimensions to be rendered.
- */
-void appRender(float interval, int width, int height) {
-	switch (currentScreen) {
-	case SCREEN_MAIN_MENU:
-		gameUpdate(interval);
-		gameRender();
-		mainMenuProcessInput();
-		mainMenuRender();
-		break;
-	case SCREEN_GAMEPLAY:
-		gameProcessInput(interval);
-		gameUpdate(interval);
-		gameRender();
-		if (!gameIsRunning()) {
-			gameOverInit(width, height);
-			currentScreen = SCREEN_GAME_OVER;
-		}
-		break;
-	case SCREEN_GAME_OVER:
-		gameUpdate(interval);
-		gameRender();
-		gameOverProcessInput();
-		gameOverRender();
-		break;
-	}
+void Application::render(float delta) {
+	currentScreen->update(delta);
+	currentScreen->render();
 }
 
-// Called from the app framework.
-void appDeinit() {
-	gameDeinit();
-	freeTextures();
+void Application::pause() {
+	currentScreen->pause();
 }
 
-void startGame() {
-	gameRestart();
-	currentScreen = SCREEN_GAMEPLAY;
+void Application::resume() {
+	currentScreen->resume();
+}
+
+Application::~Application() {
+	delete currentScreen;
+	Common::deinit();
+}
+
+Screen::Screen(Application& app) : owner(app) {}
+
+Application& Screen::getApplication() {
+	return owner;
+}
+
+int Screen::getWidth() {
+	return getApplication().getScreenWidth();
+}
+
+int Screen::getHeight() {
+	return getApplication().getScreenHeight();
 }
