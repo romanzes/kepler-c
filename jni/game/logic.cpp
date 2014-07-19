@@ -139,7 +139,7 @@ void GameLogic::increaseScore() {
 }
 
 void GameLogic::checkDeath() {
-	if (game.timeRemaining < 0) {
+	if (game.timeRemaining <= 0) {
 		game.ship->state = SHIP_STATE_DESTROYING;
 		game.ship->destroyTime = 0.0f;
 		game.timeRemaining = 0;
@@ -193,7 +193,7 @@ void GameLogic::update(float interval) {
 		updateBullets(interval, distance, rotateAngle);
 		processCollisions();
 		if (game.ship->state == SHIP_STATE_ALIVE) {
-			game.timeRemaining -= interval;
+			game.changeTimeRemaining(-interval);
 			checkDeath();
 		}
 	}

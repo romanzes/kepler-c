@@ -144,7 +144,7 @@ void GameRenderer::renderGui() {
 		comboString->draw();
 		helper->drawNumber(game.combo, comboString->x + comboString->width, comboString->y, comboString->height);
 	}
-	if (timeChangeIndicatorTime <= TIME_CHANGE_INDICATOR_TIMEOUT) {
+	if (timeChangeIndicatorTime <= TIME_CHANGE_INDICATOR_TIMEOUT && fabs(timeChangeIndicatorValue) >= 1) {
 		if (timeChangeIndicatorValue < 0)
 			glColor(DECREASE_TIME_COLOR);
 		else

@@ -28,6 +28,8 @@ int Game::isPlaying() {
 
 void Game::changeTimeRemaining(float dTimeRemaining) {
 	timeRemaining += dTimeRemaining;
+	if (timeRemaining < 0)
+		timeRemaining = 0;
 	for (IPropertyObserver* observer : observers) {
 		observer->handleTimeRemainingChange(dTimeRemaining);
 	}
