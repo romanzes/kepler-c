@@ -150,6 +150,7 @@ void GameLogic::restart() {
 	for (Asteroid *asteroid : game.asteroids) {
 		free(asteroid->points);
 	}
+	game.asteroids.clear();
 	largeAsteroidCount = 0;
 	game.ship = new Ship(game.scale);
 	game.score = 0;
