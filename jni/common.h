@@ -5,6 +5,7 @@
 #include "textures.h"
 #include "game/game.h"
 #include "game/render.h"
+#include "game/logic.h"
 
 class Application;
 

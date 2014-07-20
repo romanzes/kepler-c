@@ -5,6 +5,7 @@
 #include "asteroid.h"
 #include "bullet.h"
 #include "game.h"
+#include "logic.h"
 #include "math.h"
 #include "ship.h"
 #include "malloc.h"
