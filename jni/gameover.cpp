@@ -8,6 +8,9 @@
 #include "textures.h"
 #include "util.h"
 
+static const int BLOOD_COLOR = 0x5dff0000;
+static float bloodPoints[8];
+
 GameOverScreen::GameOverScreen(Application& app) : Screen(app) {
 	layout();
 }
@@ -19,6 +22,15 @@ void GameOverScreen::resize(int width, int height) {
 void GameOverScreen::layout() {
 	float scrW = getWidth();
 	float scrH = getHeight();
+
+	bloodPoints[0] = 0;
+	bloodPoints[1] = 0;
+	bloodPoints[2] = scrW;
+	bloodPoints[3] = 0;
+	bloodPoints[4] = 0;
+	bloodPoints[5] = scrH;
+	bloodPoints[6] = scrW;
+	bloodPoints[7] = scrH;
 
 	float sectorHeight = scrH / 3;
 	float btnHeight = sectorHeight * 3 / 4;
@@ -43,6 +55,12 @@ void GameOverScreen::render() {
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glColor(BLOOD_COLOR);
+	glVertexPointer(2, GL_FLOAT, 8, bloodPoints);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	glDisableClientState(GL_VERTEX_ARRAY);
 
 	glColor(0xffffffff);
 	restartButton->draw();
