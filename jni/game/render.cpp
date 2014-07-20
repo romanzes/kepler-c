@@ -69,6 +69,8 @@ GameRenderer::GameRenderer(Game& game) : game(game) {
 	game.addObserver(this);
 	viewportWidth = game.fieldWidth;
 	viewportHeight = game.fieldHeight;
+	timeChangeIndicatorTime = 0;
+	timeChangeIndicatorValue = 0;
 	stars = new Stars(viewportWidth, viewportHeight);
 	initGui();
 }
@@ -91,8 +93,10 @@ void GameRenderer::initGui() {
 }
 
 void GameRenderer::handleTimeRemainingChange(float dTime) {
-	timeChangeIndicatorValue = dTime;
-	timeChangeIndicatorTime = 0;
+	if (fabs(dTime) >= 1.0f) {
+		timeChangeIndicatorValue = dTime;
+		timeChangeIndicatorTime = 0;
+	}
 }
 
 void GameRenderer::handleMotion(float distance, float dAngle) {
@@ -144,7 +148,7 @@ void GameRenderer::renderGui() {
 		comboString->draw();
 		helper->drawNumber(game.combo, comboString->x + comboString->width, comboString->y, comboString->height);
 	}
-	if (timeChangeIndicatorTime <= TIME_CHANGE_INDICATOR_TIMEOUT && fabs(timeChangeIndicatorValue) >= 1) {
+	if (timeChangeIndicatorTime <= TIME_CHANGE_INDICATOR_TIMEOUT && fabs(timeChangeIndicatorValue) >= 1.0f) {
 		if (timeChangeIndicatorValue < 0)
 			glColor(DECREASE_TIME_COLOR);
 		else
