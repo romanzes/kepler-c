@@ -67,6 +67,7 @@ std::vector<Asteroid*> Asteroid::split(float scale) {
 }
 
 void Asteroid::update(float interval, float distance, float dAngle) {
+	vecRotate(&velocity, dAngle);
 	for (int j = 0; j < pointCount; j++) {
 		points[j].y -= distance;
 		vecMulAddV(&points[j], &velocity, interval);
