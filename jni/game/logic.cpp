@@ -143,6 +143,7 @@ void GameLogic::checkDeath() {
 		game.ship->state = SHIP_STATE_DESTROYING;
 		game.ship->destroyTime = 0.0f;
 		game.timeRemaining = 0;
+		angularVelocity = 0;
 	}
 }
 
@@ -161,10 +162,10 @@ void GameLogic::restart() {
 }
 
 void GameLogic::processInput() {
-	if (isTouched() && lastBulletTime >= BULLET_INTERVAL) {
-		switch (game.ship->state) {
-		case SHIP_STATE_ALIVE:
-		case SHIP_STATE_INVULNERABLE:
+	switch (game.ship->state) {
+	case SHIP_STATE_ALIVE:
+	case SHIP_STATE_INVULNERABLE:
+		if (isTouched() && lastBulletTime >= BULLET_INTERVAL) {
 			Bullet *bullet = new Bullet();
 			bullet->position.x = 0;
 			bullet->position.y = 0;
@@ -173,12 +174,12 @@ void GameLogic::processInput() {
 			bullet->velocity.y = game.scale * BULLET_SPEED;
 			game.bullets.push_back(bullet);
 			lastBulletTime = 0;
-			break;
 		}
+		angularVelocity = -SHIP_MAX_ANGULAR_VELOCITY * getAccelerometerX() / 10;
+		if (fabs(angularVelocity) < SHIP_MIN_ANGULAR_VELOCITY)
+			angularVelocity = 0;
+		break;
 	}
-	angularVelocity = -SHIP_MAX_ANGULAR_VELOCITY * getAccelerometerX() / 10;
-	if (fabs(angularVelocity) < SHIP_MIN_ANGULAR_VELOCITY)
-		angularVelocity = 0;
 }
 
 void GameLogic::update(float interval) {
@@ -189,14 +190,12 @@ void GameLogic::update(float interval) {
 	game.ship->update(interval);
 	float rotateAngle = angularVelocity * interval;
 	game.handleMotion(distance, rotateAngle);
-	if (game.state == GAME_STATE_ACTIVE) {
-		updateAsteroids(interval, distance, rotateAngle);
-		updateBullets(interval, distance, rotateAngle);
-		processCollisions();
-		if (game.ship->state == SHIP_STATE_ALIVE) {
-			game.changeTimeRemaining(-interval);
-			checkDeath();
-		}
+	updateAsteroids(interval, distance, rotateAngle);
+	updateBullets(interval, distance, rotateAngle);
+	processCollisions();
+	if (game.ship->state == SHIP_STATE_ALIVE) {
+		game.changeTimeRemaining(-interval);
+		checkDeath();
 	}
 	comboTime += interval;
 	if (comboTime > COMBO_TIMEOUT)
